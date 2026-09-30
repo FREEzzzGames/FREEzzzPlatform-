@@ -30,7 +30,7 @@ export interface ReleasePolicy {
 export const DEFAULT_RELEASE_POLICY: ReleasePolicy = Object.freeze({
   requireArtifacts: true,
   requireChecksums: true,
-  allowedChannels: Object.freeze(["development", "preview", "stable"])
+  allowedChannels: Object.freeze(["development", "preview", "stable"]) as readonly ReleaseChannel[]
 });
 
 export class ReleaseCatalog {
