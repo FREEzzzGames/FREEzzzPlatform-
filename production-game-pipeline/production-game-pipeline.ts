@@ -79,6 +79,8 @@ export class ProductionGamePipeline {
     return this.sessions.save({
       workspace: this.workspace.snapshot(),
       selectedGameId: this.selectedGameId,
+      target: this.binding.getBinding().target,
+      sessionId: session.id,
       gameSnapshot: Object.freeze(Array.from(snapshot))
     });
   }
@@ -87,6 +89,10 @@ export class ProductionGamePipeline {
     const saved = this.sessions.load();
     if (!saved?.selectedGameId) return undefined;
 
+    const currentTarget = this.binding.getBinding().target;
+    if (saved.target && saved.target !== currentTarget) {
+      throw new Error(`Saved session target "${saved.target}" does not match current target "${currentTarget}".`);
+    }
     this.select(saved.selectedGameId);
     const result = this.launchSelected(options);
     if (saved.gameSnapshot && saved.gameSnapshot.length > 0) {
