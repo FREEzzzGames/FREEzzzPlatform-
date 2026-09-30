@@ -6,7 +6,7 @@ A new modular platform built from zero.
 
 Development follows the corrected 31-stage master plan strictly in order. Every completed action is checked against the plan before the next stage begins.
 
-**Current stage: 12 — Native Performance Core**
+**Current stage: 13 — First Emulator (NES reference)**
 
 ## Core principles
 
@@ -20,8 +20,8 @@ Development follows the corrected 31-stage master plan strictly in order. Every 
 
 ## Current foundation scope
 
-Stages 1–9 provide the platform foundation. Stage 10 provides the dependency-injected SDK facade with an explicit CoreResolver boundary. Stage 11 defines the universal emulator boundary. Stage 12 adds the UI-independent native-performance boundary with CPU, GPU and audio execution interfaces plus independent Android-native and WebAssembly adapter targets.
+Stages 1–12 establish the runtime, modular foundation, SDK, emulator architecture and high-performance backend boundary. Stage 13 adds the first concrete NES reference emulator with deterministic frame timing, controller input and in-memory state restore.
 
-No console-specific emulator, UI or portal economy is implemented at this stage.
+Full commercial-ROM compatibility is not claimed at this stage. UI and portal modules remain unimplemented.
 
-See docs/master-plan.md and docs/native-performance.md.
+See docs/master-plan.md and docs/first-emulator.md.
