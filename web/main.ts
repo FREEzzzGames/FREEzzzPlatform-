@@ -11,6 +11,9 @@ import { GameContentRegistry, GameContentResolver, MemoryGameContentSource, sha2
 import { GameRuntime } from "../game-runtime/game-runtime";
 import { WebGamePlayer } from "../web-game-player/web-game-player";
 import { GameLibraryProjection } from "../game-library/game-library";
+import { TelegramIntegration } from "../telegram-integration/telegram-integration";
+import { TelegramWebAppAdapter } from "../telegram-integration/webapp-adapter";
+import { WebStorageAdapter } from "../storage/platform-storage";
 import "./styles.css";
 
 const shell=new PlatformShell();
@@ -37,6 +40,10 @@ const gameCatalog=new GameCatalog();
 gameCatalog.register({id:"platform-demo-game",name:"Platform Demo",version:"1.0.0",emulatorId:"nes",content:contentRegistry.get("platform-demo-game")!});
 const gamePlayer=new WebGamePlayer(gameCatalog,new GameRuntime({content:new GameContentResolver(contentRegistry,contentSource)}));
 const gameLibrary=new GameLibraryProjection(gameCatalog,library);
+const platformStorageAdapter=new WebStorageAdapter("freezzz:platform:");
+const telegramIntegration=new TelegramIntegration();
+const telegramBridge=(globalThis as typeof globalThis & { Telegram?: { WebApp?: { initData?:string; initDataUnsafe?:Readonly<{user?:{id:number;username?:string;first_name?:string;last_name?:string}}>; ready():void; expand():void; close():void; sendData?(data:string):void } } }).Telegram?.WebApp;
+if(telegramBridge){telegramIntegration.initialize({id:"webapp",username:"freezzz",version:"1.0.0"});telegramIntegration.clients.register(new TelegramWebAppAdapter(telegramBridge));telegramIntegration.selectClient("telegram-webapp");telegramIntegration.start();}
 gameLibrary.sync();
 const views:readonly PlatformWorkspaceView[]=["home","library","chat","live","radio","system"];
 const labels:Record<PlatformWorkspaceView,string>={home:"Home",library:"Library",chat:"Chat",live:"Live",radio:"Radio",system:"System"};
