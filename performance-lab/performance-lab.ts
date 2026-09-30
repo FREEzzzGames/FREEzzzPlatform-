@@ -11,7 +11,7 @@ export interface PerformanceBenchmark {
   readonly id: string;
   readonly version: string;
   readonly target: string;
-  readonly run(): readonly PerformanceSample[];
+  run(): readonly PerformanceSample[];
 }
 
 export interface PerformanceSummary {
