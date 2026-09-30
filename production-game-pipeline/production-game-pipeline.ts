@@ -1,18 +1,16 @@
 import type { EmulatorComponents } from "../emulator/emulator";
-import type { ControllerCore } from "../controller-core/controller-core";
-import type { AudioCore } from "../audio-core/audio-core";
-import type { SaveSystem } from "../save-system/save-system";
-import type { GameCatalogEntry } from "../game-catalog/game-catalog";
-import type { GameLibraryProjection } from "../game-library/game-library";
 import type { GameLaunchPipeline, GameLaunchResult } from "../game-launch/game-launch";
+import type { GameSession } from "../session-manager/session-manager";
+import type { GameLibraryProjection } from "../game-library/game-library";
+import type { LibraryItem } from "../library-module/library-module";
 import type { PlatformRuntimeBinding } from "../platform-runtime/platform-binding";
 import type { PlatformSessionPersistence, PlatformSessionState } from "../platform-session/platform-session";
 import type { PlatformWorkspace } from "../platform-workspace/platform-workspace";
 
 export interface ProductionGamePipelineServices {
-  readonly controller: ControllerCore;
-  readonly audio: AudioCore;
-  readonly saves: SaveSystem;
+  readonly controller: import("../controller-core/controller-core").ControllerCore;
+  readonly audio: import("../audio-core/audio-core").AudioCore;
+  readonly saves: import("../save-system/save-system").SaveSystem;
 }
 
 export interface ProductionGamePipelineLaunchOptions {
@@ -23,13 +21,13 @@ export interface ProductionGamePipelineLaunchOptions {
 export interface ProductionGamePipelineState {
   readonly selectedGameId: string | null;
   readonly sessionId: string | null;
-  readonly status: string | null;
+  readonly status: ReturnType<GameSession["getStatus"]> | null;
   readonly restored: boolean;
 }
 
 export class ProductionGamePipeline {
   private selectedGameId: string | null = null;
-  private sessionId: string | null = null;
+  private currentSession: GameSession | null = null;
   private restored = false;
 
   constructor(
@@ -45,47 +43,39 @@ export class ProductionGamePipeline {
     this.library.removeMissing();
   }
 
-  select(gameId: string): GameCatalogEntry {
+  select(gameId: string): LibraryItem {
     this.syncLibrary();
     const item = this.library.get(gameId);
     if (!item) throw new Error(`Game is not in the library: ${gameId}`);
     this.selectedGameId = gameId;
     this.restored = false;
-    return {
-      id: gameId,
-      name: item.title,
-      version: item.version,
-      emulatorId: item.metadata?.emulatorId ?? "",
-      content: {
-        gameId,
-        version: item.version,
-        emulatorId: item.metadata?.emulatorId ?? "",
-        entryContentId: "",
-        requiredContent: []
-      }
-    };
+    return item;
   }
 
   launchSelected(options: ProductionGamePipelineLaunchOptions): GameLaunchResult {
-    const gameId = this.selectedGameId;
-    if (!gameId) throw new Error("No game is selected.");
-    const target = this.binding.getBinding().target;
+    if (!this.selectedGameId) throw new Error("No game is selected.");
     this.binding.start();
     const result = this.launch.launch(
-      { gameId, target },
+      { gameId: this.selectedGameId, target: this.binding.getBinding().target },
       options.components,
       options.services
     );
-    this.sessionId = result.session.id;
+    this.currentSession = result.session;
     this.restored = false;
     return result;
   }
 
+  pause(): void {
+    this.requireSession().execution.pause();
+  }
+
+  resume(): void {
+    this.requireSession().execution.resume();
+  }
+
   save(): PlatformSessionState {
-    if (!this.sessionId || !this.selectedGameId) {
-      throw new Error("No running game session to save.");
-    }
-    const snapshot = this.launch.snapshot(this.sessionId);
+    const session = this.requireSession();
+    const snapshot = this.launch.snapshot(session.id);
     return this.sessions.save({
       workspace: this.workspace.snapshot(),
       selectedGameId: this.selectedGameId,
@@ -96,6 +86,7 @@ export class ProductionGamePipeline {
   restoreSaved(options: ProductionGamePipelineLaunchOptions): GameLaunchResult | undefined {
     const saved = this.sessions.load();
     if (!saved?.selectedGameId) return undefined;
+
     this.select(saved.selectedGameId);
     const result = this.launchSelected(options);
     if (saved.gameSnapshot && saved.gameSnapshot.length > 0) {
@@ -106,31 +97,21 @@ export class ProductionGamePipeline {
     return result;
   }
 
-  pause(): void {
-    if (!this.sessionId) throw new Error("No game session.");
-    const session = this.launch.resume(this.sessionId);
-    if (session.getStatus() === "running") {
-      const manager = this.launch as GameLaunchPipeline;
-      void manager;
-    }
-  }
-
-  resume(): void {
-    if (!this.sessionId) throw new Error("No game session.");
-    this.launch.resume(this.sessionId);
-  }
-
   saveAndStop(): PlatformSessionState {
     const saved = this.save();
-    if (this.sessionId) {
-      const session = this.launch.resume(this.sessionId);
-      if (session.getStatus() !== "stopped") {
-        session.execution.stop();
-      }
-    }
-    this.sessionId = null;
+    const session = this.currentSession;
+    if (session && session.getStatus() !== "stopped") session.execution.stop();
+    this.currentSession = null;
     this.binding.stop();
     return saved;
+  }
+
+  stopWithoutSave(): void {
+    if (this.currentSession && this.currentSession.getStatus() !== "stopped") {
+      this.currentSession.execution.stop();
+    }
+    this.currentSession = null;
+    this.binding.stop();
   }
 
   clearSaved(): void {
@@ -138,15 +119,16 @@ export class ProductionGamePipeline {
   }
 
   getState(): ProductionGamePipelineState {
-    let status: string | null = null;
-    if (this.sessionId) {
-      status = this.launch.resume(this.sessionId).getStatus();
-    }
     return Object.freeze({
       selectedGameId: this.selectedGameId,
-      sessionId: this.sessionId,
-      status,
+      sessionId: this.currentSession?.id ?? null,
+      status: this.currentSession?.getStatus() ?? null,
       restored: this.restored
     });
+  }
+
+  private requireSession(): GameSession {
+    if (!this.currentSession) throw new Error("No game session.");
+    return this.currentSession;
   }
 }
