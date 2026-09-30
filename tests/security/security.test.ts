@@ -19,7 +19,7 @@ describe("Security", () => {
   });
 
   it("redacts secret material while retaining a short suffix", () => {
-    expect(redactSecret("secret-token")).toBe("********-oken");
+    expect(redactSecret("secret-token")).toBe("********oken");
     expect(redactSecret("abc")).toBe("****");
   });
 
