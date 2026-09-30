@@ -49,4 +49,4 @@ npm run preview
 
 ## Current execution phase
 
-**Phase E — Game Runtime.** The Game Runtime now resolves the first concrete emulator adapter and creates a runnable target-independent game execution session. CI remains the authoritative execution path for verification.
+**Phase F — Content Layer.** The Content Layer now defines validated game manifests, content descriptors, isolated byte sources and runtime resolution into the first emulator path. CI remains the authoritative execution path for verification.
