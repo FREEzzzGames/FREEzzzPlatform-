@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { BaseModule } from "../../module-contract/module-contract";
 
-class TestModule extends BaseModule {\n  constructor(moduleMetadata: typeof moduleMetadata) { super(moduleMetadata); }
+class TestModule extends BaseModule {
+  constructor(moduleMetadata: { id: string; name: string; version: string }) { super(moduleMetadata); }
   initializedCount = 0;
   disposedCount = 0;
   protected onInitialize(): void { this.initializedCount++; }
