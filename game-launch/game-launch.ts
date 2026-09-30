@@ -21,4 +21,8 @@ export class GameLaunchPipeline {
     this.sessions.start(session.id);
     return Object.freeze({ entry, session, target });
   }
+
+  resume(sessionId: string): GameSession { return this.sessions.resumeExisting(sessionId); }
+  snapshot(sessionId: string): Uint8Array { return this.sessions.snapshot(sessionId); }
+  restore(sessionId: string, snapshot: Uint8Array): void { this.sessions.restore(sessionId, snapshot); }
 }
