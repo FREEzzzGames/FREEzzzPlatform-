@@ -4,6 +4,7 @@ import { GameExecutionSession, type GameExecutionManifest, type GameExecutionSer
 import type { ControllerCore } from "../controller-core/controller-core";
 import type { AudioCore } from "../audio-core/audio-core";
 import type { SaveSystem } from "../save-system/save-system";
+import type { GameContentResolver } from "../content-layer/content-layer";
 
 export interface GameRuntimeServices {
   readonly controller: ControllerCore;
@@ -13,23 +14,27 @@ export interface GameRuntimeServices {
 
 export interface GameRuntimeOptions {
   readonly adapters?: EmulatorAdapterRegistry;
+  readonly content?: GameContentResolver;
 }
 
 export class GameRuntime {
   readonly adapters: EmulatorAdapterRegistry;
+  private readonly content?: GameContentResolver;
 
   constructor(options: GameRuntimeOptions = {}) {
     this.adapters = options.adapters ?? new EmulatorAdapterRegistry();
+    this.content = options.content;
     if (!this.adapters.get("nes-reference")) this.adapters.register(new NESAdapter());
   }
 
-  create(
-    manifest: GameExecutionManifest,
-    components: EmulatorComponents,
-    services: GameRuntimeServices
-  ): GameExecutionSession {
+  create(manifest: GameExecutionManifest, components: EmulatorComponents, services: GameRuntimeServices): GameExecutionSession {
     const adapter = this.adapters.resolve(manifest.emulatorId);
     const emulator: Emulator = adapter.create(components);
+    if (this.content) {
+      const resolved = this.content.resolve(manifest.id);
+      const loadProgram = (emulator as Emulator & { loadProgram?: (program: Uint8Array) => void }).loadProgram;
+      if (loadProgram) loadProgram.call(emulator, resolved.entry);
+    }
     const executionServices: GameExecutionServices = {
       emulator,
       emulatorComponents: components,
