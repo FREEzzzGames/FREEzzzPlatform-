@@ -4,6 +4,8 @@ import type { EmulatorComponents } from "../emulator/emulator";
 import type { ControllerCore } from "../controller-core/controller-core";
 import type { AudioCore } from "../audio-core/audio-core";
 import type { SaveSystem } from "../save-system/save-system";
+import { SessionPersistence } from "../session-persistence/session-persistence";
+import type { ControllerInput } from "../controller-core/controller-core";
 
 export type WebPlayerView = "library" | "game";
 export type WebPlayerStatus = "idle" | "ready" | "playing" | "paused" | "error";
@@ -22,6 +24,7 @@ export interface WebPlayerServices {
   readonly controller: ControllerCore;
   readonly audio: AudioCore;
   readonly saves: SaveSystem;
+  readonly persistence?: SessionPersistence;
 }
 
 export class WebPlayer {
@@ -88,6 +91,14 @@ export class WebPlayer {
     this.view = "library";
     this.status = this.selectedGameId ? "ready" : "idle";
   }
+
+  frame(): void { this.requireSession(); this.services.sessions.get(this.sessionId!)!.execution.stepFrame(); }
+
+  saveState(now?: number): void { this.requireSession(); const persistence = this.services.persistence ?? new SessionPersistence(this.services.saves); persistence.saveSession(this.services.sessions.get(this.sessionId!)!, now); }
+
+  restoreState(): void { this.requireSession(); const persistence = this.services.persistence ?? new SessionPersistence(this.services.saves); persistence.restoreSession(this.services.sessions.get(this.sessionId!)!); }
+
+  input(): readonly ControllerInput[] { this.requireSession(); return this.services.controller.poll(); }
 
   getSession(): GameSession | undefined {
     return this.sessionId ? this.services.sessions.get(this.sessionId) : undefined;
