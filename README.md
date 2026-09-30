@@ -32,14 +32,14 @@ See docs/master-plan.md, docs/save-system.md, docs/controller-core.md, docs/audi
 
 ## Run the platform
 
-The repository now includes a runnable web Platform Shell.
+The repository now includes a runnable web Platform Shell. The long-term execution strategy is documented in `docs/future-roadmap.md`.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the local Vite address shown in the terminal. The shell starts the Runtime and displays live diagnostics for Runtime, Cores, Modules and Capabilities. Production build:
+Open the local Vite address shown in the terminal. Vite is configured to use `web/` as the application root. The shell starts the Runtime and displays live diagnostics for Runtime, Cores, Modules and Capabilities. Production build:
 
 ```bash
 npm run build
