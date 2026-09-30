@@ -1,15 +1,18 @@
 import { PlatformBootstrap } from "../platform-shell/platform-bootstrap";
+import { PlatformHealth } from "../platform-shell/platform-health";
 import { PlatformShell } from "../platform-shell/platform-shell";
 import "./styles.css";
 
 const shell = new PlatformShell();
 const bootstrap = new PlatformBootstrap(shell);
+const health = new PlatformHealth(shell);
 const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("Platform shell mount point is missing.");
 
 function render(): void {
   const diagnostics = shell.getDiagnostics();
   const bootstrapDiagnostics = bootstrap.getDiagnostics();
+  const healthReport = health.check();
   const runtime = diagnostics.runtime;
   const error = diagnostics.error ?? runtime.error;
   app.innerHTML = `
@@ -24,7 +27,7 @@ function render(): void {
       <div class="details">
         <div><span>Configuration</span><strong>${diagnostics.configurationKeys}</strong></div>
         <div><span>Storage</span><strong>${diagnostics.storageKeys}</strong></div>
-        <div><span>Health</span><strong>${diagnostics.status === "ready" && runtime.status === "running" ? "READY" : "CHECK"}</strong></div>
+        <div><span>Health</span><strong>${healthReport.status.toUpperCase()}</strong></div>
         <div><span>Bootstrap</span><strong>${bootstrapDiagnostics.status.toUpperCase()}</strong></div>
       </div>
       ${error ? `<div class="error" role="alert"><strong>Platform error</strong><span>${escapeHtml(error.message)}</span></div>` : ""}
