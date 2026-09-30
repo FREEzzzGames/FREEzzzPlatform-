@@ -28,7 +28,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 22 | Telegram Integration | COMPLETE |
 | 23 | Android | COMPLETE |
 | 24 | GitHub / CI/CD | COMPLETE |
-| 25 | Patch System | PLANNED |
+| 25 | Patch System | COMPLETE |
 | 26 | Developer Isolation | PLANNED |
 | 27 | Testing Architecture | PLANNED |
 | 28 | Performance Lab | PLANNED |
@@ -55,6 +55,10 @@ Android Integration defines only the Android target boundary. Android SDK object
 ## Stage 24 boundary
 
 GitHub Actions provides automated typecheck and test verification. CI does not contain application credentials or platform-specific release logic.
+
+## Stage 25 boundary
+
+The Patch System provides validated, storage-backed patch operations without network, target-platform or content-layer coupling.
 
 ## Global architecture law
 
