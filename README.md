@@ -49,4 +49,4 @@ npm run preview
 
 ## Current execution phase
 
-**Phase F — Content Layer.** The Content Layer now defines validated game manifests, content descriptors, isolated byte sources and runtime resolution into the first emulator path. CI remains the authoritative execution path for verification.
+**Phase G — Game Catalog & Session Manager.** The Game Catalog and Session Manager now provide normalized game selection and isolated lifecycle control over independent execution sessions. CI remains the authoritative execution path for verification.
