@@ -17,8 +17,8 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 11 | Emulator Architecture | COMPLETE |
 | 12 | Native Performance Core | COMPLETE |
 | 13 | First Emulator (NES reference) | COMPLETE |
-| 14 | Save System | NEXT |
-| 15 | Controller Core | PLANNED |
+| 14 | Save System | COMPLETE |
+| 15 | Controller Core | NEXT |
 | 16 | Audio Core | PLANNED |
 | 17 | CHAT Module | PLANNED |
 | 18 | LIVE Module | PLANNED |
@@ -36,9 +36,13 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 30 | Content / ROM layer | PLANNED |
 | 31 | Release Architecture | PLANNED |
 
+## Stage 14 boundary
+
+Battery Save and Save State share one API but remain semantically distinct. The save layer stores opaque payloads and does not depend on UI or a specific emulator.
+
 ## Stage 21 exclusion
 
-Stage 21 is permanently removed from implementation scope: no portal-wide economy, shared coins/currency, marketplace, auctions, buying/selling, paid items or Collection Economy. Games may keep their own internal mechanics.
+Stage 21 is permanently removed from implementation scope: no portal-wide economy, shared coins/currency, marketplace, auctions, buying/selling, paid items or Collection Economy.
 
 ## Global architecture law
 
