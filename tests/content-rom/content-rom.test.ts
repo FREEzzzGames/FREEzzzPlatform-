@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ContentCatalog, ContentLoader, MemoryContentRepository } from "../content-rom/content-rom";
+import { ContentCatalog, ContentLoader, MemoryContentRepository } from "../../content-rom/content-rom";
 
 describe("ContentRomLayer", () => {
   it("stores opaque content and returns defensive copies", () => {
