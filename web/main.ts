@@ -15,7 +15,7 @@ function render(): void {
   const healthReport = health.check();
   const runtime = diagnostics.runtime;
   const error = diagnostics.error ?? runtime.error;
-  app.innerHTML = `
+  mount.innerHTML = `
     <section class="shell">
       <header><div><span class="eyebrow">FREEzzz</span><h1>Platform</h1></div><span class="state state-${diagnostics.status}">${diagnostics.status.toUpperCase()}</span></header>
       <div class="grid">
