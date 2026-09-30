@@ -1,5 +1,3 @@
 # Storage v0.8
 
-Storage provides the platform's minimal synchronous key/value persistence contract.
-
-Stage 8 implements an in-memory storage backend only. It does not add files, databases, browser storage, cloud synchronization, encryption, serialization policies, or application save logic. Those concerns belong to adapters or later stages.
+Storage is a backend-independent key/value API. The platform depends on the Storage contract, not a concrete backend. The memory adapter is the deterministic test backend; target adapters can implement Web, Android, Telegram or server storage.
