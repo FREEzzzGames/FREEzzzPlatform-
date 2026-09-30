@@ -43,6 +43,10 @@ export class ReleaseCatalog {
   }
   get(id: string): ReleaseManifest | undefined { return this.releases.get(id); }
   list(): readonly ReleaseManifest[] { return Object.freeze([...this.releases.values()]); }
+  replace(manifest: ReleaseManifest): void {
+    if (!this.releases.has(manifest.id)) throw new Error(`Unknown release: ${manifest.id}`);
+    this.releases.set(manifest.id, Object.freeze({ ...manifest, artifacts: Object.freeze([...manifest.artifacts]) }));
+  }
   clear(): void { this.releases.clear(); }
 }
 
@@ -76,8 +80,7 @@ export class ReleaseManager {
     if (!current) throw new Error(`Unknown release: ${id}`);
     if (current.status !== "candidate") throw new Error("Only candidate releases can be released.");
     const released = Object.freeze({ ...current, status: "released" as const });
-    this.catalog.clear();
-    this.catalog.register(released);
+    this.catalog.replace(released);
     return released;
   }
 
@@ -86,8 +89,7 @@ export class ReleaseManager {
     if (!current) throw new Error(`Unknown release: ${id}`);
     if (current.status !== "released") throw new Error("Only released versions can be deprecated.");
     const deprecated = Object.freeze({ ...current, status: "deprecated" as const });
-    this.catalog.clear();
-    this.catalog.register(deprecated);
+    this.catalog.replace(deprecated);
     return deprecated;
   }
 }
