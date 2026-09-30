@@ -6,7 +6,7 @@ A new modular platform built from zero.
 
 Development follows the corrected 31-stage master plan strictly in order. Every completed action is checked against the plan before the next stage begins.
 
-**Current stage: 14 — Save System**
+**Current stage: 15 — Controller Core**
 
 ## Core principles
 
@@ -20,8 +20,8 @@ Development follows the corrected 31-stage master plan strictly in order. Every 
 
 ## Current foundation scope
 
-Stages 1–13 establish the runtime, modular foundation, SDK, emulator architecture, high-performance boundary and first NES reference emulator. Stage 14 adds a storage-backed Save API for both Battery Save and Save State without coupling saves to a game, emulator, UI or target platform.
+Stages 1–13 establish the runtime, modular foundation, SDK, emulator architecture, high-performance boundary and first NES reference emulator. Stage 14 adds a storage-backed Save API for both Battery Save and Save State without coupling saves to a game, emulator, UI or target platform. Stage 15 adds a platform-independent Controller Core with normalized input state and target-specific adapters.
 
 No UI or portal economy is implemented at this stage.
 
-See docs/master-plan.md and docs/save-system.md.
+See docs/master-plan.md, docs/save-system.md and docs/controller-core.md.
