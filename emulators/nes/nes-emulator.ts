@@ -83,7 +83,7 @@ export class NESMemory implements Memory {
 }
 
 export class NESControllerAdapter implements Input, NESController {
-  private buttons = 0;
+  buttons = 0;
   setButtons(buttons: number): void {
     this.buttons = buttons & 0xff;
   }
