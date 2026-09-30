@@ -6,7 +6,7 @@ A new modular platform built from zero.
 
 Development follows the 31-stage master plan strictly in order. Every completed action is checked against the plan before the next stage begins.
 
-**Current stage: 9 — Module Manager**
+**Current stage: 10 — SDK**
 
 ## Core principles
 
@@ -20,6 +20,6 @@ Development follows the 31-stage master plan strictly in order. Every completed 
 
 ## Current foundation scope
 
-Runtime remains the foundation. The Core Registry, Core API, Module Contract, Capability API, Event Bus, Configuration, Storage and Module Manager are implemented as isolated foundation layers. SDK, UI, Emulator and application modules remain deliberately unimplemented. Stages 7–9 were rechecked against the master plan and corrected before proceeding to SDK.
+Runtime remains the foundation. The Core Registry, Core API, Module Contract, Capability API, Event Bus, Configuration, Storage and Module Manager are implemented as isolated foundation layers. UI, Emulator and application modules remain deliberately unimplemented. The SDK now provides the stable dependency-injected facade over the foundation layers. Stages 7–9 were rechecked against the master plan and corrected before proceeding to SDK.
 
-See docs/module-manager.md.
+See docs/sdk.md.
