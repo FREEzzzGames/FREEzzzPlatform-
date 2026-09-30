@@ -1,21 +1,38 @@
 import { describe, expect, it } from "vitest";
-import { PlatformShell } from "../platform-shell/platform-shell";
+import { PlatformShell } from "../../platform-shell/platform-shell";
 
 describe("PlatformShell", () => {
-  it("starts and exposes independent platform registries", () => {
+  it("starts into ready state and exposes diagnostics", () => {
     const shell = new PlatformShell();
-    expect(shell.getStatus().runtime.status).toBe("created");
+    expect(shell.getStatus()).toBe("created");
     shell.start();
-    const status = shell.getStatus();
-    expect(status.runtime.status).toBe("running");
-    expect(status.cores).toBe(0);
-    expect(status.modules).toBe(0);
-    expect(status.capabilities).toBe(0);
+    const diagnostics = shell.getDiagnostics();
+    expect(diagnostics.status).toBe("ready");
+    expect(diagnostics.runtime.status).toBe("running");
+    expect(diagnostics.cores).toBe(0);
+    expect(diagnostics.modules).toBe(0);
+    expect(diagnostics.capabilities).toBe(0);
+    expect(diagnostics.configurationKeys).toBe(0);
+    expect(diagnostics.storageKeys).toBe(0);
   });
 
-  it("stops without coupling the registries", () => {
+  it("is idempotent for start and stop", () => {
     const shell = new PlatformShell();
-    shell.start(); shell.stop();
-    expect(shell.getStatus().runtime.status).toBe("stopped");
+    shell.start();
+    shell.start();
+    expect(shell.getStatus()).toBe("ready");
+    shell.stop();
+    shell.stop();
+    expect(shell.getStatus()).toBe("stopped");
+    expect(shell.getDiagnostics().runtime.status).toBe("stopped");
+  });
+
+  it("allows a clean restart", () => {
+    const shell = new PlatformShell();
+    shell.start();
+    shell.stop();
+    shell.start();
+    expect(shell.getStatus()).toBe("ready");
+    expect(shell.getDiagnostics().runtime.status).toBe("running");
   });
 });
