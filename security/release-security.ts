@@ -1,0 +1,3 @@
+export interface ReleaseSecurityInput{readonly id:string;readonly version:string;readonly target:"web"|"android"|"telegram"|"custom";readonly modules:readonly string[];}
+export function validateReleaseSecurity(i:ReleaseSecurityInput):readonly string[]{const e:string[]=[];if(!/^[a-z0-9][a-z0-9.-]{1,63}$/.test(i.id))e.push("Invalid release id.");if(!/^\d+\.\d+\.\d+$/.test(i.version))e.push("Release version must use semver.");if(i.modules.some(m=>!m.trim()))e.push("Release contains an empty module id.");if(new Set(i.modules).size!==i.modules.length)e.push("Release contains duplicate module ids.");return e;}
+export function assertReleaseSecurity(i:ReleaseSecurityInput):void{const e=validateReleaseSecurity(i);if(e.length)throw new Error(e.join(" "));}
