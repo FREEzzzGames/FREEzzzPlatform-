@@ -24,7 +24,7 @@ The 31-stage architecture is complete. Stage 21 remains permanently excluded by 
 
 ## Current execution phase
 
-**Phase K — Real Platform Adapters.** Web, Android and Telegram now resolve through a normalized target adapter boundary while the platform core remains target-independent. CI remains the authoritative execution path for verification.
+**Phase M — Complete Game Vertical Slice.** The Web Player now runs validated game content through the catalog, runtime, emulator, frame loop and persistence path, including saved-session continuation in a fresh player instance. CI remains the authoritative execution path for verification.
 
 No portal-wide economy is implemented.
 
