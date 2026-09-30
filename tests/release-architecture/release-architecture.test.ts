@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ReleaseManager } from "../release-architecture/release-architecture";
+import { ReleaseManager } from "../../release-architecture/release-architecture";
 
 const manifest = { id: "release-1", version: "1.0.0", channel: "stable" as const, status: "draft" as const, createdAt: 1, artifacts: [{ id: "web", version: "1.0.0", target: "web" as const, fileName: "platform.zip", size: 10, checksum: "abc" }] };
 
