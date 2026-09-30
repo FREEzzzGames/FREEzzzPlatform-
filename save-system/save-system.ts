@@ -40,53 +40,118 @@ export class BinaryJsonCodec<T> implements SaveCodec<T> {
     if (!version.trim()) throw new Error("Save codec version must not be empty.");
     this.version = version;
   }
-  encode(value: T): Uint8Array { return new TextEncoder().encode(JSON.stringify(value)); }
-  decode(payload: Uint8Array): T { return JSON.parse(new TextDecoder().decode(payload)) as T; }
+  encode(value: T): Uint8Array {
+    return new TextEncoder().encode(JSON.stringify(value));
+  }
+  decode(payload: Uint8Array): T {
+    return JSON.parse(new TextDecoder().decode(payload)) as T;
+  }
+}
+
+interface PersistedSaveSlot {
+  readonly id: string;
+  readonly kind: SaveKind;
+  readonly createdAt: number;
+  readonly updatedAt: number;
+  readonly version: string;
+  readonly payload: number[];
 }
 
 export class StorageSaveProvider implements SaveProvider {
   readonly id = "storage";
-  readonly version = "1.0.0";
+  readonly version = "1.1.0";
   private readonly prefix = "save:";
   constructor(private readonly storage: Storage) {}
+
   load(slotId: string): SaveSlot | undefined {
     const value = this.storage.get(this.key(slotId));
     if (!(value instanceof Uint8Array)) return undefined;
-    return this.clone(new BinaryJsonCodec<SaveSlot>("1.0.0").decode(value));
+    const persisted = new BinaryJsonCodec<PersistedSaveSlot>("1.1.0").decode(value);
+    if (!Array.isArray(persisted.payload) ||
+        persisted.payload.some(byte => !Number.isInteger(byte) || byte < 0 || byte > 255)) {
+      throw new Error("Persisted save payload is invalid.");
+    }
+    return {
+      id: persisted.id,
+      kind: persisted.kind,
+      createdAt: persisted.createdAt,
+      updatedAt: persisted.updatedAt,
+      version: persisted.version,
+      payload: Uint8Array.from(persisted.payload)
+    };
   }
+
   save(slot: SaveSlot): void {
-    this.storage.set(this.key(slot.id), new BinaryJsonCodec<SaveSlot>("1.0.0").encode(slot));
+    const persisted: PersistedSaveSlot = {
+      id: slot.id,
+      kind: slot.kind,
+      createdAt: slot.createdAt,
+      updatedAt: slot.updatedAt,
+      version: slot.version,
+      payload: Array.from(slot.payload)
+    };
+    this.storage.set(
+      this.key(slot.id),
+      new BinaryJsonCodec<PersistedSaveSlot>("1.1.0").encode(persisted)
+    );
   }
-  delete(slotId: string): boolean { return this.storage.delete(this.key(slotId)); }
+
+  delete(slotId: string): boolean {
+    return this.storage.delete(this.key(slotId));
+  }
+
   list(kind?: SaveKind): readonly SaveSlot[] {
-    return this.storage.keys().filter(key => key.startsWith(this.prefix))
+    return this.storage.keys()
+      .filter(key => key.startsWith(this.prefix))
       .map(key => this.load(key.slice(this.prefix.length)))
-      .filter((slot): slot is SaveSlot => slot !== undefined && (kind === undefined || slot.kind === kind))
-      .map(slot => this.clone(slot));
+      .filter((slot): slot is SaveSlot =>
+        slot !== undefined && (kind === undefined || slot.kind === kind)
+      )
+      .map(slot => ({ ...slot, payload: slot.payload.slice() }));
   }
+
   private key(slotId: string): string {
     if (!slotId.trim()) throw new Error("Save slot id must not be empty.");
     return this.prefix + slotId;
   }
-  private clone(slot: SaveSlot): SaveSlot { return { ...slot, payload: slot.payload.slice() }; }
 }
 
 export class DefaultSaveSystem implements SaveSystem {
   constructor(private readonly provider: SaveProvider) {}
+
   save(slotId: string, kind: SaveKind, version: string, payload: Uint8Array, now = Date.now()): SaveSlot {
     if (!slotId.trim()) throw new Error("Save slot id must not be empty.");
     if (!version.trim()) throw new Error("Save version must not be empty.");
     const existing = this.provider.load(slotId);
-    if (existing && existing.kind !== kind) throw new Error("Save slot \"" + slotId + "\" already contains a different save kind.");
-    const slot: SaveSlot = { id: slotId, kind, createdAt: existing?.createdAt ?? now, updatedAt: now, version, payload: payload.slice() };
+    if (existing && existing.kind !== kind) {
+      throw new Error("Save slot \"" + slotId + "\" already contains a different save kind.");
+    }
+    const slot: SaveSlot = {
+      id: slotId,
+      kind,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+      version,
+      payload: payload.slice()
+    };
     this.provider.save(slot);
     return { ...slot, payload: slot.payload.slice() };
   }
+
   load(slotId: string): SaveSlot | undefined {
     const slot = this.provider.load(slotId);
     return slot ? { ...slot, payload: slot.payload.slice() } : undefined;
   }
-  delete(slotId: string): boolean { return this.provider.delete(slotId); }
-  list(kind?: SaveKind): readonly SaveSlot[] { return this.provider.list(kind); }
-  has(slotId: string): boolean { return this.provider.load(slotId) !== undefined; }
+
+  delete(slotId: string): boolean {
+    return this.provider.delete(slotId);
+  }
+
+  list(kind?: SaveKind): readonly SaveSlot[] {
+    return this.provider.list(kind);
+  }
+
+  has(slotId: string): boolean {
+    return this.provider.load(slotId) !== undefined;
+  }
 }
