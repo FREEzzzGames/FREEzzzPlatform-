@@ -14,7 +14,7 @@ Both use the same Save API but retain their type and slot identity.
 - Save payloads are opaque Uint8Array data; the save system does not know game-specific schemas.
 - SaveCodec provides versioned serialization for typed application data.
 - Save slots preserve creation/update timestamps and save version.
-- Stored payloads are copied on input/output to prevent mutation leaks.
+- Stored payloads are serialized as byte arrays and restored as Uint8Array values; input/output buffers are copied to prevent mutation leaks.
 
 The layer is independent of UI, emulator-specific code, Telegram, Android and portal modules.
 
