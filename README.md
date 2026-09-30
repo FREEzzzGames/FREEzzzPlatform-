@@ -24,7 +24,7 @@ The 31-stage architecture is complete. Stage 21 remains permanently excluded by 
 
 ## Current execution phase
 
-**Phase M — Complete Game Vertical Slice.** The Web Player now runs validated game content through the catalog, runtime, emulator, frame loop and persistence path, including saved-session continuation in a fresh player instance. CI remains the authoritative execution path for verification.
+**Phase O — Real Android Target.** The repository now contains a real Android Gradle application with lifecycle-aware host UI and CI APK generation. Phase N web module adapters are also integrated. CI remains the authoritative execution path for verification.
 
 No portal-wide economy is implemented.
 
