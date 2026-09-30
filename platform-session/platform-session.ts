@@ -1,5 +1,6 @@
 import type { PlatformWorkspace, PlatformWorkspaceSnapshot } from "../platform-workspace/platform-workspace";
 import type { TargetStorageAdapter } from "../storage/platform-storage";
+import type { Storage } from "../storage/storage";
 
 export interface PlatformSessionState {
   readonly workspace: PlatformWorkspaceSnapshot;
@@ -8,17 +9,20 @@ export interface PlatformSessionState {
 }
 
 export class PlatformSessionPersistence {
-  constructor(private readonly storage: TargetStorageAdapter, private readonly key = "platform-session") {}
+  private readonly store: Storage;
+  constructor(adapter: TargetStorageAdapter, private readonly key = "platform-session") {
+    this.store = adapter.create();
+  }
 
   save(state: Omit<PlatformSessionState, "savedAt">): PlatformSessionState {
     const snapshot: PlatformSessionState = Object.freeze({ ...state, savedAt: Date.now() });
-    this.storage.set(this.key, JSON.stringify(snapshot));
+    this.store.set(this.key, JSON.stringify(snapshot));
     return snapshot;
   }
 
   load(): PlatformSessionState | undefined {
-    const raw = this.storage.get(this.key);
-    if (!raw) return undefined;
+    const raw = this.store.get(this.key);
+    if (typeof raw !== "string") return undefined;
     try {
       const value = JSON.parse(raw) as PlatformSessionState;
       if (!value || typeof value.savedAt !== "number" || !value.workspace) return undefined;
@@ -37,6 +41,6 @@ export class PlatformSessionPersistence {
   }
 
   clear(): void {
-    this.storage.remove(this.key);
+    this.store.delete(this.key);
   }
 }
