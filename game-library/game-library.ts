@@ -9,6 +9,7 @@ export class GameLibraryProjection {
       if(!this.library.get(item.id)) this.library.add(item);
     }
   }
+  get(gameId:string):LibraryItem|undefined{return this.library.get('game:'+gameId);}
   removeMissing():void{
     const ids=new Set(this.catalog.list().map(game=>`game:${game.id}`));
     for(const item of this.library.query({type:"game"})) if(item.metadata?.gameId && !ids.has(item.id)) this.library.remove(item.id);
