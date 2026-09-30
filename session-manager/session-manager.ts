@@ -4,7 +4,7 @@ import type { AudioCore } from "../audio-core/audio-core";
 import type { SaveSystem } from "../save-system/save-system";
 import type { GameCatalog, GameCatalogEntry } from "../game-catalog/game-catalog";
 import { GameRuntime } from "../game-runtime/game-runtime";
-import { GameExecutionSession } from "../game-execution/game-execution";
+import { GameExecutionSession, type GameExecutionManifest } from "../game-execution/game-execution";
 
 export type GameSessionStatus = "created" | "running" | "paused" | "stopped" | "failed";
 
