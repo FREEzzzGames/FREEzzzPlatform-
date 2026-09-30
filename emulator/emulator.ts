@@ -70,6 +70,11 @@ export interface Emulator {
   getDiagnostics(): EmulatorDiagnostics;
 }
 
+export interface StatefulEmulator extends Emulator {
+  snapshotState(): Uint8Array;
+  restoreState(snapshot: Uint8Array): void;
+}
+
 export abstract class BaseEmulatorCore implements Emulator {
   readonly metadata: EmulatorMetadata;
   protected status: EmulatorStatus = "created";
