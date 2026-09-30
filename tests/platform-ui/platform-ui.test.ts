@@ -1,0 +1,1 @@
+import{describe,expect,it}from"vitest";import{PlatformUiRegistry}from"../../platform-ui/platform-ui";describe("platform UI boundary",()=>{it("registers target-neutral adapters",()=>{const r=new PlatformUiRegistry();r.register({id:"test",version:"1.0.0",target:"custom",mount:()=>{},update:()=>{},unmount:()=>{}});expect(r.list()).toHaveLength(1);});});
