@@ -107,6 +107,7 @@ export interface LibraryModuleApi {
 
 export class LibraryModule extends BaseModule implements LibraryModuleApi {
   private statusValue: LibraryModuleStatus = "created";
+  private activeStorage: LibraryStorage | undefined;
   readonly storage = new LibraryStorageRegistry();
   readonly catalog = new LibraryCatalog();
 
@@ -141,14 +142,25 @@ export class LibraryModule extends BaseModule implements LibraryModuleApi {
     this.statusValue = "stopped";
   }
 
+  useStorage(adapterId: string): void {
+    this.requireRunning();
+    const adapter = this.storage.get(adapterId);
+    if (!adapter) throw new Error(`LIBRARY storage adapter not found: ${adapterId}`);
+    this.activeStorage = adapter.createStorage();
+    for (const item of this.activeStorage.list()) if (!this.catalog.get(item.id)) this.catalog.add(item);
+  }
+
   add(item: LibraryItem): void {
     this.requireRunning();
     this.catalog.add(item);
+    this.activeStorage?.add(item);
   }
 
   remove(itemId: string): boolean {
     this.requireRunning();
-    return this.catalog.remove(itemId);
+    const removed = this.catalog.remove(itemId);
+    if (removed) this.activeStorage?.remove(itemId);
+    return removed;
   }
 
   get(itemId: string): LibraryItem | undefined {
@@ -164,6 +176,7 @@ export class LibraryModule extends BaseModule implements LibraryModuleApi {
   clear(): void {
     this.requireRunning();
     this.catalog.clear();
+    this.activeStorage?.clear();
   }
 
   private requireRunning(): void {
