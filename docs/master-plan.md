@@ -22,7 +22,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 16 | Audio Core | COMPLETE |
 | 17 | CHAT Module | COMPLETE |
 | 18 | LIVE Module | COMPLETE |
-| 19 | RADIO Module | PLANNED |
+| 19 | RADIO Module | COMPLETE |
 | 20 | LIBRARY Module | PLANNED |
 | 21 | Marketplace / Collection | REMOVED PERMANENTLY |
 | 22 | Telegram Integration | PLANNED |
