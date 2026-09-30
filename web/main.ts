@@ -6,7 +6,7 @@ import "./styles.css";
 const shell = new PlatformShell();
 const bootstrap = new PlatformBootstrap(shell);
 const health = new PlatformHealth(shell);
-const app = document.querySelector<HTMLDivElement>("#app");
+const mount = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("Platform shell mount point is missing.");
 
 function render(): void {
