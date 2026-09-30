@@ -7,5 +7,6 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["runtime/**/*.ts", "tests/**/*.ts"]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "dist", "coverage"]
 }
