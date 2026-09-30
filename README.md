@@ -29,3 +29,19 @@ Stages 1–13 establish the runtime, modular foundation, SDK, emulator architect
 No UI or portal economy is implemented at this stage.
 
 See docs/master-plan.md, docs/save-system.md, docs/controller-core.md, docs/audio-core.md, docs/chat-module.md, docs/live-module.md, docs/radio-module.md, docs/library-module.md and docs/telegram-integration.md, docs/android-integration.md and docs/ci-cd.md.
+
+## Run the platform
+
+The repository now includes a runnable web Platform Shell.
+
+```bash
+npm install
+npm run dev
+```
+
+Open the local Vite address shown in the terminal. The shell starts the Runtime and displays live diagnostics for Runtime, Cores, Modules and Capabilities. Production build:
+
+```bash
+npm run build
+npm run preview
+```
