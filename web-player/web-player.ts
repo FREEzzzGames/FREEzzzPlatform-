@@ -5,7 +5,6 @@ import type { ControllerCore } from "../controller-core/controller-core";
 import type { AudioCore } from "../audio-core/audio-core";
 import type { SaveSystem } from "../save-system/save-system";
 import { SessionPersistence } from "../session-persistence/session-persistence";
-import type { ControllerInput } from "../controller-core/controller-core";
 
 export type WebPlayerView = "library" | "game";
 export type WebPlayerStatus = "idle" | "ready" | "playing" | "paused" | "error";
@@ -98,7 +97,6 @@ export class WebPlayer {
 
   restoreState(): void { this.requireSession(); const persistence = this.services.persistence ?? new SessionPersistence(this.services.saves); persistence.restoreSession(this.services.sessions.get(this.sessionId!)!); }
 
-  input(): readonly ControllerInput[] { this.requireSession(); return this.services.controller.poll(); }
 
   getSession(): GameSession | undefined {
     return this.sessionId ? this.services.sessions.get(this.sessionId) : undefined;
