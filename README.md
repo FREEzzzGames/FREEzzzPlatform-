@@ -6,7 +6,7 @@ A new modular platform built from zero.
 
 Development follows the corrected 31-stage master plan strictly in order. Every completed action is checked against the plan before the next stage begins.
 
-**Current stage: 16 — Audio Core**
+**Current stage: 17 — CHAT Module**
 
 ## Core principles
 
@@ -24,4 +24,4 @@ Stages 1–13 establish the runtime, modular foundation, SDK, emulator architect
 
 No UI or portal economy is implemented at this stage.
 
-See docs/master-plan.md, docs/save-system.md and docs/controller-core.md.
+See docs/master-plan.md, docs/save-system.md, docs/controller-core.md, docs/audio-core.md and docs/chat-module.md.
