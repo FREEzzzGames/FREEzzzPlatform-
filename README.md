@@ -6,7 +6,7 @@ A new modular platform built from zero.
 
 Development follows the 31-stage master plan strictly in order. Every completed action is checked against the plan before the next stage begins.
 
-**Current stage: 6 — Event Bus**
+**Current stage: 7 — Configuration**
 
 ## Core principles
 
@@ -20,6 +20,6 @@ Development follows the 31-stage master plan strictly in order. Every completed 
 
 ## Stage 2 scope
 
-Runtime remains the foundation. The Core Registry, Core API, Module Contract, Capability API and Event Bus are now implemented as isolated foundation layers. Configuration, Storage, Module Manager, SDK, UI, Emulator and application modules remain deliberately unimplemented.
+Runtime remains the foundation. The Core Registry, Core API, Module Contract, Capability API, Event Bus and Configuration are now implemented as isolated foundation layers. Storage, Module Manager, SDK, UI, Emulator and application modules remain deliberately unimplemented.
 
-See docs/event-bus.md.
+See docs/configuration.md.
