@@ -8,9 +8,15 @@ describe("PlatformSessionPersistence", () => {
     const persistence = new PlatformSessionPersistence(adapter);
     const saved = persistence.save({
       workspace: { view: "library", revision: 4 },
-      selectedGameId: "game-1"
+      selectedGameId: "game-1",
+      target: "web",
+      sessionId: "session-1",
+      gameSnapshot: [1, 2, 3]
     });
     expect(saved.selectedGameId).toBe("game-1");
+    expect(saved.target).toBe("web");
+    expect(saved.sessionId).toBe("session-1");
+    expect(saved.gameSnapshot).toEqual([1, 2, 3]);
     expect(persistence.load()).toMatchObject({
       workspace: { view: "library", revision: 4 },
       selectedGameId: "game-1"
