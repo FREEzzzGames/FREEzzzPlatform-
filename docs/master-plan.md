@@ -16,8 +16,8 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 10 | SDK | COMPLETE — CoreResolver boundary corrected |
 | 11 | Emulator Architecture | COMPLETE |
 | 12 | Native Performance Core | COMPLETE |
-| 13 | First Emulator | NEXT |
-| 14 | Save System | PLANNED |
+| 13 | First Emulator (NES reference) | COMPLETE |
+| 14 | Save System | NEXT |
 | 15 | Controller Core | PLANNED |
 | 16 | Audio Core | PLANNED |
 | 17 | CHAT Module | PLANNED |
