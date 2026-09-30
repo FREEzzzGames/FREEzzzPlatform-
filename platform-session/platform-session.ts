@@ -5,6 +5,7 @@ import type { Storage } from "../storage/storage";
 export interface PlatformSessionState {
   readonly workspace: PlatformWorkspaceSnapshot;
   readonly selectedGameId: string | null;
+  readonly gameSnapshot?: readonly number[];
   readonly savedAt: number;
 }
 
@@ -29,6 +30,9 @@ export class PlatformSessionPersistence {
       return Object.freeze({
         workspace: Object.freeze({ view: value.workspace.view, revision: value.workspace.revision }),
         selectedGameId: typeof value.selectedGameId === "string" ? value.selectedGameId : null,
+        gameSnapshot: Array.isArray(value.gameSnapshot) && value.gameSnapshot.every(n => Number.isInteger(n) && n >= 0 && n <= 255)
+          ? Object.freeze([...value.gameSnapshot])
+          : undefined,
         savedAt: value.savedAt
       });
     } catch {
