@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { BaseModule } from "../../module-contract/module-contract";
 import { ModuleManager, type ModulePackage } from "../../module-manager/module-manager";
+
 class TestModule extends BaseModule { constructor(id:string,version="1.0.0"){super({id,name:id,version});} }
 const pkg=(id="demo",version="1.0.0"):ModulePackage=>({metadata:{id,name:id,version},create:()=>new TestModule(id,version)});
-describe("Module Manager stage 9",()=>{it("discovers and installs",()=>{const m=new ModuleManager();expect(m.discover({discover:()=>[pkg()]})).toHaveLength(1);m.install(pkg());expect(m.get("demo")?.state).toBe("installed");});it("enables and disables",()=>{const m=new ModuleManager();m.install(pkg());m.enable("demo",{ownerCoreId:"core-a"});expect(m.get("demo")?.state).toBe("enabled");m.disable("demo");expect(m.get("demo")?.state).toBe("disabled");});it("updates rolls back and removes",()=>{const m=new ModuleManager();m.install(pkg("demo","1.0.0"));m.update("demo",pkg("demo","2.0.0"));expect(m.get("demo")?.metadata.version).toBe("2.0.0");m.rollback("demo",pkg("demo","1.0.0"));expect(m.get("demo")?.metadata.version).toBe("1.0.0");expect(m.uninstall("demo")).toBe(true);});it("rejects invalid lifecycle operations",()=>{const m=new ModuleManager();expect(()=>m.enable("missing",{ownerCoreId:"core-a"})).toThrow("not installed");m.install(pkg());m.enable("demo",{ownerCoreId:"core-a"});expect(()=>m.uninstall("demo")).toThrow("must be disabled");});});
+
+describe("Module Manager stage 9",()=>{
+  it("discovers and installs",()=>{const m=new ModuleManager();expect(m.discover({discover:()=>[pkg()]})).toHaveLength(1);m.install(pkg());expect(m.get("demo")?.state).toBe("installed");});
+  it("enables and disables",()=>{const m=new ModuleManager();m.install(pkg());m.enable("demo",{ownerCoreId:"core-a"});expect(m.get("demo")?.state).toBe("enabled");m.disable("demo");expect(m.get("demo")?.state).toBe("disabled");});
+  it("updates, rolls back and removes",()=>{const m=new ModuleManager();m.install(pkg("demo","1.0.0"));m.update("demo",pkg("demo","2.0.0"));expect(m.get("demo")?.metadata.version).toBe("2.0.0");m.rollback("demo",pkg("demo","1.0.0"));expect(m.get("demo")?.metadata.version).toBe("1.0.0");expect(m.uninstall("demo")).toBe(true);});
+  it("rejects invalid lifecycle operations",()=>{const m=new ModuleManager();expect(()=>m.enable("missing",{ownerCoreId:"core-a"})).toThrow("not installed");m.install(pkg());m.enable("demo",{ownerCoreId:"core-a"});expect(()=>m.uninstall("demo")).toThrow("must be disabled");});
+});
