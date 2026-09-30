@@ -1,7 +1,66 @@
 import type { Storage, StorageAdapter, StorageValue } from "./storage";
-export type StorageTarget="web"|"android-native"|"telegram"|"custom";
-export interface TargetStorageAdapter extends StorageAdapter{readonly target:StorageTarget;}
-class MemoryTargetStorage implements Storage{private readonly values=new Map<string,StorageValue>();get(k:string){return this.values.get(k);}set(k:string,v:StorageValue){if(!k.trim())throw new Error("Storage key must not be empty.");this.values.set(k,v instanceof Uint8Array?v.slice():v);}has(k:string){return this.values.has(k);}delete(k:string){return this.values.delete(k);}keys(){return [...this.values.keys()];}clear(){this.values.clear();}}
-export class MemoryTargetStorageAdapter implements TargetStorageAdapter{readonly id="memory-target";readonly version="1.0.0";constructor(readonly target:StorageTarget){}create():Storage{return new MemoryTargetStorage();}}
-export class BrowserLocalStorage implements Storage{constructor(private readonly prefix="freezzz:"){}get(k:string){const r=globalThis.localStorage?.getItem(this.prefix+k);if(r===null||r===undefined)return undefined;try{const v=JSON.parse(r);return Array.isArray(v)&&v.every(n=>Number.isInteger(n))?Uint8Array.from(v):v;}catch{return r;}}set(k:string,v:StorageValue){globalThis.localStorage?.setItem(this.prefix+k,JSON.stringify(v instanceof Uint8Array?Array.from(v):v));}has(k:string){return globalThis.localStorage?.getItem(this.prefix+k)!==null;}delete(k:string){if(!this.has(k))return false;globalThis.localStorage?.removeItem(this.prefix+k);return true;}keys(){const out:string[]=[];for(let i=0;i<(globalThis.localStorage?.length??0);i++){const k=globalThis.localStorage?.key(i);if(k?.startsWith(this.prefix))out.push(k.slice(this.prefix.length));}return out;}clear(){for(const k of this.keys())globalThis.localStorage?.removeItem(this.prefix+k);}}
-export class WebStorageAdapter implements TargetStorageAdapter{readonly id="web-local-storage";readonly version="1.0.0";readonly target="web" as const;constructor(private readonly prefix="freezzz:"){}create():Storage{return new BrowserLocalStorage(this.prefix);}}
+
+export type StorageTarget = "web" | "android-native" | "telegram" | "custom";
+export interface TargetStorageAdapter extends StorageAdapter { readonly target: StorageTarget; }
+
+class MemoryTargetStorage implements Storage {
+  private readonly values = new Map<string, StorageValue>();
+  get(key: string) { return this.values.get(key); }
+  set(key: string, value: StorageValue) {
+    if (!key.trim()) throw new Error("Storage key must not be empty.");
+    this.values.set(key, value instanceof Uint8Array ? value.slice() : value);
+  }
+  has(key: string) { return this.values.has(key); }
+  delete(key: string) { return this.values.delete(key); }
+  keys() { return [...this.values.keys()]; }
+  clear() { this.values.clear(); }
+}
+
+export class MemoryTargetStorageAdapter implements TargetStorageAdapter {
+  readonly id = "memory-target";
+  readonly version = "1.0.0";
+  private readonly storage = new MemoryTargetStorage();
+  constructor(readonly target: StorageTarget) {}
+  create(): Storage { return this.storage; }
+  get(key: string) { return this.storage.get(key); }
+  set(key: string, value: StorageValue) { this.storage.set(key, value); }
+  remove(key: string) { return this.storage.delete(key); }
+}
+
+export class BrowserLocalStorage implements Storage {
+  constructor(private readonly prefix = "freezzz:") {}
+  get(key: string) {
+    const raw = globalThis.localStorage?.getItem(this.prefix + key);
+    if (raw === null || raw === undefined) return undefined;
+    try {
+      const value = JSON.parse(raw);
+      return Array.isArray(value) && value.every(n => Number.isInteger(n)) ? Uint8Array.from(value) : value;
+    } catch { return raw; }
+  }
+  set(key: string, value: StorageValue) {
+    globalThis.localStorage?.setItem(this.prefix + key, JSON.stringify(value instanceof Uint8Array ? Array.from(value) : value));
+  }
+  has(key: string) { return globalThis.localStorage?.getItem(this.prefix + key) !== null; }
+  delete(key: string) {
+    if (!this.has(key)) return false;
+    globalThis.localStorage?.removeItem(this.prefix + key);
+    return true;
+  }
+  keys() {
+    const out: string[] = [];
+    for (let i = 0; i < (globalThis.localStorage?.length ?? 0); i++) {
+      const key = globalThis.localStorage?.key(i);
+      if (key?.startsWith(this.prefix)) out.push(key.slice(this.prefix.length));
+    }
+    return out;
+  }
+  clear() { for (const key of this.keys()) globalThis.localStorage?.removeItem(this.prefix + key); }
+}
+
+export class WebStorageAdapter implements TargetStorageAdapter {
+  readonly id = "web-local-storage";
+  readonly version = "1.0.0";
+  readonly target = "web" as const;
+  constructor(private readonly prefix = "freezzz:") {}
+  create(): Storage { return new BrowserLocalStorage(this.prefix); }
+}
