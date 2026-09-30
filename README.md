@@ -18,8 +18,8 @@ Development follows the 31-stage master plan strictly in order. Every completed 
 - UI is minimal and uses no decorative drawings or emoji.
 - No portal-wide economy.
 
-## Stage 2 scope
+## Current foundation scope
 
-Runtime remains the foundation. The Core Registry, Core API, Module Contract, Capability API, Event Bus, Configuration, Storage and Module Manager are now implemented as isolated foundation layers. SDK, UI, Emulator and application modules remain deliberately unimplemented.
+Runtime remains the foundation. The Core Registry, Core API, Module Contract, Capability API, Event Bus, Configuration, Storage and Module Manager are implemented as isolated foundation layers. SDK, UI, Emulator and application modules remain deliberately unimplemented. Stages 7–9 were rechecked against the master plan and corrected before proceeding to SDK.
 
 See docs/module-manager.md.
