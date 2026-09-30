@@ -31,7 +31,7 @@ describe("Core API stage 3", () => {
   });
 
   it("captures startup failures", () => {
-    class FailingCore extends BaseCore {
+    class FailingCore extends BaseCore {\n      constructor(metadata: { id: string; name: string; version: string }) { super(metadata); }
       protected onStart(): void { throw new Error("boom"); }
     }
     const core = new FailingCore(coreMetadata);
