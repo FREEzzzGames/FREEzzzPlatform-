@@ -1,12 +1,15 @@
+import { PlatformBootstrap } from "../platform-shell/platform-bootstrap";
 import { PlatformShell } from "../platform-shell/platform-shell";
 import "./styles.css";
 
 const shell = new PlatformShell();
+const bootstrap = new PlatformBootstrap(shell);
 const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("Platform shell mount point is missing.");
 
 function render(): void {
   const diagnostics = shell.getDiagnostics();
+  const bootstrapDiagnostics = bootstrap.getDiagnostics();
   const runtime = diagnostics.runtime;
   const error = diagnostics.error ?? runtime.error;
   app.innerHTML = `
@@ -22,6 +25,7 @@ function render(): void {
         <div><span>Configuration</span><strong>${diagnostics.configurationKeys}</strong></div>
         <div><span>Storage</span><strong>${diagnostics.storageKeys}</strong></div>
         <div><span>Health</span><strong>${diagnostics.status === "ready" && runtime.status === "running" ? "READY" : "CHECK"}</strong></div>
+        <div><span>Bootstrap</span><strong>${bootstrapDiagnostics.status.toUpperCase()}</strong></div>
       </div>
       ${error ? `<div class="error" role="alert"><strong>Platform error</strong><span>${escapeHtml(error.message)}</span></div>` : ""}
       <footer>
@@ -32,7 +36,7 @@ function render(): void {
 
   document.querySelector("#refresh")?.addEventListener("click", render);
   document.querySelector("#stop")?.addEventListener("click", () => { try { shell.stop(); } catch (error) { console.error(error); } render(); });
-  document.querySelector("#start")?.addEventListener("click", () => { try { shell.start(); } catch (error) { console.error(error); } render(); });
+  document.querySelector("#start")?.addEventListener("click", () => { try { bootstrap.start(); } catch (error) { console.error(error); } render(); });
 }
 
 function escapeHtml(value: string): string {
