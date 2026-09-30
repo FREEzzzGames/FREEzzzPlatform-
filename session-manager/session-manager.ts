@@ -25,6 +25,9 @@ export class GameSessionManager {
   destroy(id:string):boolean{const s=this.sessions.get(id);if(!s)return false;if(s.execution.getStatus()!=="stopped"&&s.execution.getStatus()!=="created")s.execution.stop();return this.sessions.delete(id);}
   get(id:string):GameSession|undefined{return this.sessions.get(id);}
   list():readonly GameSession[]{return [...this.sessions.values()];}
+  snapshot(id:string):Uint8Array{ return this.require(id).execution.snapshotState(); }
+  restore(id:string,snapshot:Uint8Array):void{ this.require(id).execution.restoreState(snapshot); }
+  resumeExisting(id:string):GameSession{ const session=this.require(id); if(session.getStatus()==="paused") this.resume(id); return session; }
   private require(id:string):GameSession{const s=this.sessions.get(id);if(!s)throw new Error(`Game session not found: ${id}`);return s;}
   private mapStatus(status:ReturnType<GameExecutionSession["getStatus"]>):GameSessionStatus{if(status==="starting"||status==="running")return"running";if(status==="paused")return"paused";if(status==="stopping"||status==="stopped")return"stopped";if(status==="failed")return"failed";return"created";}
 }
