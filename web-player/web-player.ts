@@ -95,6 +95,27 @@ export class WebPlayer {
 
   saveState(now?: number): void { this.requireSession(); const persistence = this.services.persistence ?? new SessionPersistence(this.services.saves); persistence.saveSession(this.services.sessions.get(this.sessionId!)!, now); }
 
+  continueSaved(sessionId: string): GameSession {
+    if (!this.selectedGameId) throw new Error("Select a game before continuing a saved session.");
+    const persistence = this.services.persistence ?? new SessionPersistence(this.services.saves);
+    const saved = persistence.load(sessionId);
+    if (!saved) throw new Error("No persisted session found: " + sessionId);
+    if (saved.gameId !== this.selectedGameId) throw new Error("Saved session belongs to a different game.");
+    const session = this.services.sessions.create(this.catalog, this.selectedGameId, this.services.components, { controller: this.services.controller, audio: this.services.audio, saves: this.services.saves }, sessionId);
+    try {
+      this.services.sessions.start(session.id);
+      persistence.restoreSession(session);
+    } catch (cause) {
+      this.services.sessions.destroy(session.id);
+      throw cause;
+    }
+    this.sessionId = session.id;
+    this.view = "game";
+    this.status = "playing";
+    this.error = null;
+    return session;
+  }
+
   restoreState(): void { this.requireSession(); const persistence = this.services.persistence ?? new SessionPersistence(this.services.saves); persistence.restoreSession(this.services.sessions.get(this.sessionId!)!); }
 
 
