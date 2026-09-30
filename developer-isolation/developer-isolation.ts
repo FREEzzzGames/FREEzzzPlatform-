@@ -11,7 +11,7 @@ export interface IsolationPolicy {
 export interface IsolationViolation { readonly developerId: string; readonly dependencyId?: string; readonly reason: string; }
 export interface IsolationReport { readonly valid: boolean; readonly violations: readonly IsolationViolation[]; }
 
-export const DEFAULT_ISOLATION_POLICY: IsolationPolicy = {
+const DEFAULT_ALLOWED_DEPENDENCY_SCOPES: IsolationPolicy["allowedDependencyScopes"] = Object.freeze({
   allowedDependencyScopes: Object.freeze({
     core: Object.freeze(["core", "adapter"]), module: Object.freeze(["core", "adapter"]),
     adapter: Object.freeze(["core", "adapter"]), platform: Object.freeze(["core", "module", "adapter", "platform"]),
