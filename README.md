@@ -49,4 +49,4 @@ npm run preview
 
 ## Current execution phase
 
-**Phase C — Platform Workspace.** The Platform Workspace is now the user-facing application boundary above Platform Host. Navigation, recoverable errors and host state are composed without direct module coupling. CI remains the authoritative execution path for verification.
+**Phase D — Game Execution.** The Game Execution pipeline now composes emulator, controller, audio, save and optional performance services behind a single target-independent execution boundary. CI remains the authoritative execution path for verification.
