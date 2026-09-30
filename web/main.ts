@@ -7,7 +7,7 @@ const shell = new PlatformShell();
 const bootstrap = new PlatformBootstrap(shell);
 const health = new PlatformHealth(shell);
 const mount = document.querySelector<HTMLDivElement>("#app");
-if (!app) throw new Error("Platform shell mount point is missing.");
+if (!mount) throw new Error("Platform shell mount point is missing.");
 
 function render(): void {
   const diagnostics = shell.getDiagnostics();
