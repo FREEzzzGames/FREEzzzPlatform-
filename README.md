@@ -49,4 +49,4 @@ npm run preview
 
 ## Current execution phase
 
-**Phase G — Game Catalog & Session Manager.** The Game Catalog and Session Manager now provide normalized game selection and isolated lifecycle control over independent execution sessions. CI remains the authoritative execution path for verification.
+**Phase H — Session Persistence & Recovery.** Session Persistence now provides versioned durable session metadata and recovery payloads through the existing Save System, without emulator-specific coupling. CI remains the authoritative execution path for verification.
