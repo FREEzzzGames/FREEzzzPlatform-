@@ -20,6 +20,7 @@ const chat=new ChatModule(), live=new LiveModule(), radio=new RadioModule(), lib
 for(const module of [chat,live,radio,library]){module.initialize({ownerCoreId:"freezzz-web"});module.start();}
 let liveElement:HTMLVideoElement|undefined;
 installWebModuleAdapters(chat,live,radio,library,element=>{liveElement=element;});
+library.useStorage("web-library");
 chat.addConversation({id:"general",participants:[{id:"user",displayName:"User"},{id:"system",displayName:"System"}]});
 chat.receive({id:"welcome",conversationId:"general",senderId:"system",text:"CHAT adapter is online.",timestamp:Date.now()});
 library.add({id:"platform-demo",title:"Platform Demo",type:"game",version:"1.0.0",source:"content://demo"});
