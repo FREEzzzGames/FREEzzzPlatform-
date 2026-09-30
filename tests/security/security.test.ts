@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SecurityGuard, SecurityPolicyRegistry, redactSecret, validateTextInput } from "../security/security";
+import { SecurityGuard, SecurityPolicyRegistry, redactSecret, validateTextInput } from "../../security/security";
 
 describe("Security", () => {
   it("authorizes only explicitly granted permissions", () => {
