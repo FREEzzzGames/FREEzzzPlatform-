@@ -36,14 +36,14 @@ class WebLivePlayer implements LivePlayer {
   pause(){this.element?.pause();this.status="paused";this.updatedAt=Date.now();}
   stop(){this.element?.pause();if(this.element)this.element.currentTime=0;this.status="stopped";this.updatedAt=Date.now();}
   getState(){return Object.freeze({streamId:this.streamId,status:this.status,positionMs:Math.round((this.element?.currentTime??0)*1000),updatedAt:this.updatedAt});}
-  getElement(){return this.element;}
+  createElement(){if(!this.element)this.initialize();return this.element!;}
 }
 
 export class WebLiveAdapter implements LivePlayerAdapter {
   readonly id="web-media"; readonly version="1.0.0"; readonly target="web" as const;
-  constructor(private readonly sink:(player:WebLivePlayer)=>void=()=>{}){}
+  constructor(private readonly sink:(element:HTMLVideoElement)=>void=()=>{}){}
   supports(protocol:LiveStream["protocol"]){return protocol==="hls"||protocol==="dash"||protocol==="progressive"||protocol==="custom";}
-  createPlayer(){const player=new WebLivePlayer();this.sink(player);return player;}
+  createPlayer(){const player=new WebLivePlayer();const created=player.createElement();this.sink(created);return player;}
 }
 
 class WebRadioPlayer implements RadioPlayer {
@@ -78,8 +78,8 @@ export class WebLibraryAdapter implements LibraryStorageAdapter {
   createStorage(){return new WebLibraryStorage("freezzz.library");}
 }
 
-export function installWebModuleAdapters(chat:ChatModule,live:LiveModule,radio:RadioModule,library:LibraryModule,onLivePlayer:(player:LivePlayer)=>void=()=>{}):WebModuleAdapters{
-  const adapters={chat:new WebChatAdapter(chat),live:new WebLiveAdapter(onLivePlayer as (player:WebLivePlayer)=>void),radio:new WebRadioAdapter(),library:new WebLibraryAdapter()};
+export function installWebModuleAdapters(chat:ChatModule,live:LiveModule,radio:RadioModule,library:LibraryModule,onLivePlayer:(element:HTMLVideoElement)=>void=()=>{}):WebModuleAdapters{
+  const adapters={chat:new WebChatAdapter(chat),live:new WebLiveAdapter(onLivePlayer),radio:new WebRadioAdapter(),library:new WebLibraryAdapter()};
   chat.transports.register(adapters.chat);live.players.register(adapters.live);radio.players.register(adapters.radio);library.storage.register(adapters.library);
   return adapters;
 }
