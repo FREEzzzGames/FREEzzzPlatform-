@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GameCatalog } from "../../game-catalog/game-catalog";
 import { GameSessionManager } from "../../session-manager/session-manager";
-import { GameRuntime } from "../../game-runtime/game-runtime";
 import { WebPlayer } from "../../web-player/web-player";
 import { DefaultControllerCore } from "../../controller-core/controller-core";
 import { DefaultAudioCore } from "../../audio-core/audio-core";
