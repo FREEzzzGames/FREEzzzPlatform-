@@ -21,7 +21,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 15 | Controller Core | COMPLETE |
 | 16 | Audio Core | COMPLETE |
 | 17 | CHAT Module | COMPLETE |
-| 18 | LIVE Module | PLANNED |
+| 18 | LIVE Module | COMPLETE |
 | 19 | RADIO Module | PLANNED |
 | 20 | LIBRARY Module | PLANNED |
 | 21 | Marketplace / Collection | REMOVED PERMANENTLY |
