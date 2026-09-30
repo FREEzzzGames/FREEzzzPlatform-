@@ -1,4 +1,4 @@
-import type { PlatformHost, PlatformHostManifest, PlatformHostTarget } from "./platform-host";
+import type { PlatformHost, PlatformHostManifest, PlatformHostTarget } from "../platform-host/platform-host";
 import { PlatformShell } from "../platform-shell/platform-shell";
 
 export interface PlatformAdapter {
