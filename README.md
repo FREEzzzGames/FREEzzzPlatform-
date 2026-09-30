@@ -6,7 +6,7 @@ A new modular platform built from zero.
 
 Development follows the 31-stage master plan strictly in order. Every completed action is checked against the plan before the next stage begins.
 
-**Current stage: 4 — Module Contract**
+**Current stage: 5 — Capability API**
 
 ## Core principles
 
@@ -20,6 +20,6 @@ Development follows the 31-stage master plan strictly in order. Every completed 
 
 ## Stage 2 scope
 
-Runtime remains the foundation. The Core Registry, Core API and Module Contract are now implemented as isolated foundation layers. Capability API, Event Bus, Configuration, Storage, Module Manager, SDK, UI, Emulator and application modules remain deliberately unimplemented.
+Runtime remains the foundation. The Core Registry, Core API, Module Contract and Capability API are now implemented as isolated foundation layers. Event Bus, Configuration, Storage, Module Manager, SDK, UI, Emulator and application modules remain deliberately unimplemented.
 
-See docs/module-contract.md.
+See docs/capability-api.md.
