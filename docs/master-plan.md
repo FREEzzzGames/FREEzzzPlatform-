@@ -19,7 +19,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 13 | First Emulator (NES reference) | COMPLETE |
 | 14 | Save System | COMPLETE |
 | 15 | Controller Core | COMPLETE |
-| 16 | Audio Core | PLANNED |
+| 16 | Audio Core | COMPLETE |
 | 17 | CHAT Module | PLANNED |
 | 18 | LIVE Module | PLANNED |
 | 19 | RADIO Module | PLANNED |
