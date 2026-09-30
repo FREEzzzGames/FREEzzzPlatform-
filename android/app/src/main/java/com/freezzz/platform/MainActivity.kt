@@ -2,52 +2,36 @@ package com.freezzz.platform
 
 import android.app.Activity
 import android.os.Bundle
-import android.view.Gravity
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.webkit.WebView
+import android.webkit.WebViewClient
 
-/**
- * Android target shell.
- *
- * Android-specific UI/lifecycle stays inside the Android target. The shared
- * platform runtime remains target-neutral and is reached through adapters.
- */
 class MainActivity : Activity() {
-    private lateinit var status: TextView
+    private lateinit var webView: WebView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        status = TextView(this).apply {
-            textSize = 16f
-            text = "FREEzzz Platform\nAndroid host: created"
+        webView = WebView(this).apply {
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.mediaPlaybackRequiresUserGesture = false
+            webViewClient = WebViewClient()
         }
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            setPadding(32, 32, 32, 32)
-        }
-        root.addView(TextView(this).apply {
-            text = "FREEzzz Platform"
-            textSize = 28f
-        })
-        root.addView(status)
-        setContentView(root)
-        setHostStatus("ready")
+        setContentView(webView)
+        webView.loadUrl("file:///android_asset/web/index.html")
     }
 
     override fun onStart() {
         super.onStart()
-        setHostStatus("running")
+        webView.onResume()
     }
 
     override fun onStop() {
-        setHostStatus("stopped")
+        webView.onPause()
         super.onStop()
     }
 
-    private fun setHostStatus(value: String) {
-        if (::status.isInitialized) {
-            status.text = "FREEzzz Platform\nAndroid host: $value"
-        }
+    override fun onDestroy() {
+        webView.destroy()
+        super.onDestroy()
     }
 }
