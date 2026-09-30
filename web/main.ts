@@ -6,8 +6,13 @@ import "./styles.css";
 const shell = new PlatformShell();
 const bootstrap = new PlatformBootstrap(shell);
 const health = new PlatformHealth(shell);
-const mount = document.querySelector<HTMLDivElement>("#app");
-if (!mount) throw new Error("Platform shell mount point is missing.");
+function requireMount(): HTMLDivElement {
+  const element = document.querySelector<HTMLDivElement>("#app");
+  if (!element) throw new Error("Platform shell mount point is missing.");
+  return element;
+}
+
+const mount = requireMount();
 
 function render(): void {
   const diagnostics = shell.getDiagnostics();
