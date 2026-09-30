@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DeveloperIsolation } from "../developer-isolation/developer-isolation";
+import { DeveloperIsolation } from "../../developer-isolation/developer-isolation";
 
 describe("DeveloperIsolation", () => {
   it("accepts core, module and adapter dependencies", () => {
