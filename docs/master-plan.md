@@ -29,7 +29,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 23 | Android | COMPLETE |
 | 24 | GitHub / CI/CD | COMPLETE |
 | 25 | Patch System | COMPLETE |
-| 26 | Developer Isolation | PLANNED |
+| 26 | Developer Isolation | COMPLETE |
 | 27 | Testing Architecture | PLANNED |
 | 28 | Performance Lab | PLANNED |
 | 29 | Security | PLANNED |
@@ -59,6 +59,10 @@ GitHub Actions provides automated typecheck and test verification. CI does not c
 ## Stage 25 boundary
 
 The Patch System provides validated, storage-backed patch operations without network, target-platform or content-layer coupling.
+
+## Stage 26 boundary
+
+Developer Isolation defines explicit ownership scopes and dependency policies. Modules cannot directly depend on other modules; unknown, duplicate and self-dependencies are rejected.
 
 ## Global architecture law
 
