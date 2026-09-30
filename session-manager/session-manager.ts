@@ -26,13 +26,14 @@ export class GameSessionManager {
     gameId: string,
     components: EmulatorComponents,
     services: { readonly controller: ControllerCore; readonly audio: AudioCore; readonly saves: SaveSystem },
+    target: GameExecutionManifest["target"] = "web",
     sessionId = `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   ): GameSession {
     if (this.sessions.has(sessionId)) throw new Error(`Session already exists: ${sessionId}`);
     const entry = catalog.get(gameId);
     if (!entry) throw new Error(`Game is not available: ${gameId}`);
     const execution = this.runtime.create(
-      { id: entry.id, name: entry.name, version: entry.version, emulatorId: entry.emulatorId, target: "web" },
+      { id: entry.id, name: entry.name, version: entry.version, emulatorId: entry.emulatorId, target },
       components,
       services
     );
