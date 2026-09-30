@@ -1,60 +1,67 @@
-import type { Core, CoreContext } from "../core-api/core-api";
-import type { CoreMetadata } from "../core-registry/core-registry";
+import type { Module, ModuleContext, ModuleMetadata } from "../module-contract/module-contract";
 
-export interface ManagedCore {
-  readonly core: Core;
-  readonly metadata: CoreMetadata;
-}
+export interface ModulePackage { readonly metadata: ModuleMetadata; readonly create: () => Module; }
+export interface ModuleSource { discover(): readonly ModulePackage[]; }
+export interface ModuleRecord extends ModulePackage { readonly state: "installed" | "enabled" | "disabled"; }
 
 export class ModuleManager {
-  private readonly cores = new Map<string, ManagedCore>();
+  private readonly modules = new Map<string, ModuleRecord>();
 
-  register(core: Core): void {
-    const id = core.metadata.id;
-    if (this.cores.has(id)) throw new Error(`Core "${id}" is already managed.`);
-    this.cores.set(id, { core, metadata: core.metadata });
+  discover(source: ModuleSource): readonly ModulePackage[] { return source.discover(); }
+
+  install(pkg: ModulePackage): void {
+    this.validate(pkg);
+    if (this.modules.has(pkg.metadata.id)) throw new Error(`Module "${pkg.metadata.id}" is already installed.`);
+    this.modules.set(pkg.metadata.id, { ...pkg, state: "installed" });
   }
 
-  unregister(id: string): boolean {
-    const managed = this.cores.get(id);
-    if (!managed) return false;
-    if (managed.core.getStatus() === "running") managed.core.stop();
-    return this.cores.delete(id);
+  enable(id: string, context: ModuleContext): void {
+    const record = this.require(id);
+    if (record.state === "enabled") return;
+    const instance = record.create();
+    instance.initialize(context);
+    this.modules.set(id, { ...record, create: () => instance, state: "enabled" });
   }
 
-  start(id: string): void {
-    const managed = this.require(id);
-    const context: CoreContext = { core: managed.metadata };
-    managed.core.start(context);
+  disable(id: string): void {
+    const record = this.require(id);
+    if (record.state !== "enabled") return;
+    const instance = record.create();
+    instance.dispose();
+    this.modules.set(id, { ...record, create: () => instance, state: "disabled" });
   }
 
-  stop(id: string): void {
-    this.require(id).core.stop();
+  uninstall(id: string): boolean {
+    const record = this.modules.get(id);
+    if (!record) return false;
+    if (record.state === "enabled") throw new Error(`Module "${id}" must be disabled before uninstall.`);
+    return this.modules.delete(id);
   }
 
-  get(id: string): Core | undefined {
-    return this.cores.get(id)?.core;
+  update(id: string, next: ModulePackage): void {
+    const current = this.require(id);
+    this.validate(next);
+    if (next.metadata.id !== id) throw new Error("Updated module id must match the installed module.");
+    if (current.state === "enabled") throw new Error("Enabled modules must be disabled before update.");
+    this.modules.set(id, { ...next, state: "installed" });
   }
 
-  list(): readonly ManagedCore[] {
-    return [...this.cores.values()];
-  }
+  rollback(id: string, previous: ModulePackage): void { this.update(id, previous); }
 
-  startAll(): void {
-    for (const managed of this.cores.values()) {
-      this.start(managed.metadata.id);
+  get(id: string): ModuleRecord | undefined { return this.modules.get(id); }
+  list(): readonly ModuleRecord[] { return [...this.modules.values()]; }
+
+  private validate(pkg: ModulePackage): void {
+    const metadata = pkg.metadata;
+    if (!metadata.id.trim() || !metadata.name.trim() || !metadata.version.trim()) {
+      throw new Error("Module metadata must contain id, name and version.");
     }
+    if (typeof pkg.create !== "function") throw new Error("Module package must provide a factory.");
   }
 
-  stopAll(): void {
-    for (const managed of [...this.cores.values()].reverse()) {
-      this.stop(managed.metadata.id);
-    }
-  }
-
-  private require(id: string): ManagedCore {
-    const managed = this.cores.get(id);
-    if (!managed) throw new Error(`Core "${id}" is not managed.`);
-    return managed;
+  private require(id: string): ModuleRecord {
+    const record = this.modules.get(id);
+    if (!record) throw new Error(`Module "${id}" is not installed.`);
+    return record;
   }
 }
