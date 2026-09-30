@@ -26,7 +26,7 @@ function setup() {
     content: { gameId: "game-1", version: "1.0.0", emulatorId: "nes-reference", entryContentId: "rom", requiredContent: [] }
   });
   const library = new LibraryModule();
-  library.initialize({} as never); library.start();
+  library.initialize({ ownerCoreId:"test-core", coreRegistry: {} } as never); library.start();
   const projection = new GameLibraryProjection(catalog, library);
   const launch = new GameLaunchPipeline(catalog, new GameRuntime(), new GameSessionManager(new GameRuntime()));
   const runtime = new UnifiedPlatformRuntime("web");
