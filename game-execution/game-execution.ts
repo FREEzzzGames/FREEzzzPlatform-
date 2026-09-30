@@ -1,4 +1,4 @@
-import type { Emulator, EmulatorComponents } from "../emulator/emulator";
+import type { Emulator, EmulatorComponents, StatefulEmulator } from "../emulator/emulator";
 import type { ControllerCore } from "../controller-core/controller-core";
 import type { AudioCore } from "../audio-core/audio-core";
 import type { SaveSystem, SaveKind } from "../save-system/save-system";
@@ -98,6 +98,28 @@ export class GameExecutionSession {
       this.safeStop();
       throw error;
     }
+  }
+
+  snapshotState(): Uint8Array {
+    if (this.status !== "running" && this.status !== "paused") {
+      throw new Error("Game execution must be running or paused before snapshotting state.");
+    }
+    const emulator = this.services.emulator as StatefulEmulator;
+    if (typeof emulator.snapshotState !== "function") {
+      throw new Error(`Emulator "${this.manifest.emulatorId}" does not support state snapshots.`);
+    }
+    return emulator.snapshotState().slice();
+  }
+
+  restoreState(snapshot: Uint8Array): void {
+    if (this.status !== "running" && this.status !== "paused") {
+      throw new Error("Game execution must be running or paused before restoring state.");
+    }
+    const emulator = this.services.emulator as StatefulEmulator;
+    if (typeof emulator.restoreState !== "function") {
+      throw new Error(`Emulator "${this.manifest.emulatorId}" does not support state restoration.`);
+    }
+    emulator.restoreState(snapshot.slice());
   }
 
   save(slotId: string, kind: SaveKind, version: string, payload: Uint8Array, now?: number): void {
