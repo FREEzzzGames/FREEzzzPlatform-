@@ -35,6 +35,18 @@ describe("WebPlayer", () => {
     expect(player.getState().sessionId).toBeNull();
   });
 
+  it("runs frames and persists/restores emulator state", () => {
+    const { player } = setup();
+    player.select("demo");
+    player.launch();
+    player.frame();
+    expect(player.getSession()?.execution.getDiagnostics().frames).toBe(1);
+    player.saveState();
+    player.pause();
+    player.restoreState();
+    expect(player.getState().status).toBe("paused");
+  });
+
   it("does not launch without a selected game", () => {
     const { player } = setup();
     expect(() => player.launch()).toThrow(/Select a game/);
