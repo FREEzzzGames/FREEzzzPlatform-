@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { BaseCore } from "../../core-api/core-api";
 
-class TestCore extends BaseCore {\n  constructor(coreMetadata: typeof coreMetadata) { super(coreMetadata); }
+class TestCore extends BaseCore {
+  constructor(coreMetadata: { id: string; name: string; version: string }) { super(coreMetadata); }
   started = false;
   stopped = false;
 
@@ -31,7 +32,8 @@ describe("Core API stage 3", () => {
   });
 
   it("captures startup failures", () => {
-    class FailingCore extends BaseCore {\n      constructor(metadata: { id: string; name: string; version: string }) { super(metadata); }
+    class FailingCore extends BaseCore {
+      constructor(metadata: { id: string; name: string; version: string }) { super(metadata); }
       protected onStart(): void { throw new Error("boom"); }
     }
     const core = new FailingCore(coreMetadata);
