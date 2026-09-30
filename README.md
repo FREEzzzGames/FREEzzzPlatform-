@@ -49,4 +49,4 @@ npm run preview
 
 ## Current execution phase
 
-**Phase B — Platform Host.** The Platform Host composition boundary is now in place above the Platform Shell. Cores can be registered and lifecycle-managed without target SDK coupling. CI remains the authoritative execution path for verification.
+**Phase C — Platform Workspace.** The Platform Workspace is now the user-facing application boundary above Platform Host. Navigation, recoverable errors and host state are composed without direct module coupling. CI remains the authoritative execution path for verification.
