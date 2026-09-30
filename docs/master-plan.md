@@ -32,7 +32,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 26 | Developer Isolation | COMPLETE |
 | 27 | Testing Architecture | COMPLETE |
 | 28 | Performance Lab | COMPLETE |
-| 29 | Security | PLANNED |
+| 29 | Security | COMPLETE |
 | 30 | Content / ROM layer | PLANNED |
 | 31 | Release Architecture | PLANNED |
 
@@ -71,6 +71,10 @@ Testing Architecture defines explicit unit, contract, integration, architecture 
 ## Stage 28 boundary
 
 Performance Lab provides normalized benchmark samples and summaries without coupling measurement to a target runtime, UI or portal economy.
+
+## Stage 29 boundary
+
+Security provides explicit permission policies, default-deny authorization, bounded input validation and secret redaction without replacing target-specific security controls.
 
 ## Global architecture law
 
