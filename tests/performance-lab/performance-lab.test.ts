@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PerformanceLab } from "../performance-lab/performance-lab";
+import { PerformanceLab } from "../../performance-lab/performance-lab";
 
 describe("PerformanceLab", () => {
   it("registers and runs independent benchmarks", () => {
