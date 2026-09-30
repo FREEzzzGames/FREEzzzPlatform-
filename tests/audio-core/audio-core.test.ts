@@ -13,7 +13,7 @@ class TestDevice implements AudioDevice {
   readonly id = "test-device";
   readonly version = "1.0.0";
   readonly format = format;
-  private status = "created" as const;
+  private status: "created" | "ready" | "running" | "stopped" = "created";
   private readonly buffers: AudioBuffer[] = [];
 
   initialize(): void { this.status = "ready"; }
