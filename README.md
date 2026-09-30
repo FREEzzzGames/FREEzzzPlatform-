@@ -6,7 +6,7 @@ A new modular platform built from zero.
 
 Development follows the 31-stage master plan strictly in order. Every completed action is checked against the plan before the next stage begins.
 
-**Current stage: 1 — Runtime**
+**Current stage: 2 — Core Registry**
 
 ## Core principles
 
@@ -18,12 +18,8 @@ Development follows the 31-stage master plan strictly in order. Every completed 
 - UI is minimal and uses no decorative drawings or emoji.
 - No portal-wide economy.
 
-## Stage 1 scope
+## Stage 2 scope
 
-Only the Runtime foundation is implemented. Core Registry, Core API, Module Contract, Capability API, Event Bus, Configuration, Storage, Module Manager, SDK, UI, Emulator and application modules are deliberately not implemented yet.
+Runtime remains the foundation. The Core Registry is now implemented as an isolated discovery and registration layer. Core API, Module Contract, Capability API, Event Bus, Configuration, Storage, Module Manager, SDK, UI, Emulator and application modules remain deliberately unimplemented.
 
-## Runtime
-
-The Runtime provides startup, shutdown, lifecycle state, version/environment metadata and minimal diagnostics.
-
-See docs/runtime.md.
+See docs/core-registry.md.
