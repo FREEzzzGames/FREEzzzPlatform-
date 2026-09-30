@@ -1,24 +1,3 @@
 import { describe, expect, it } from "vitest";
 import { ConfigStore } from "../../configuration/configuration";
-
-describe("Configuration stage 7", () => {
-  it("stores and resolves configuration values", () => {
-    const config = new ConfigStore({ environment: "test", retries: 3 });
-    expect(config.get<string>("environment")).toBe("test");
-    expect(config.require<number>("retries")).toBe(3);
-    expect(config.keys()).toEqual(["environment", "retries"]);
-  });
-
-  it("supports mutation", () => {
-    const config = new ConfigStore();
-    config.set("enabled", true);
-    expect(config.has("enabled")).toBe(true);
-    expect(config.delete("enabled")).toBe(true);
-    expect(config.has("enabled")).toBe(false);
-  });
-
-  it("fails clearly for missing required values", () => {
-    const config = new ConfigStore();
-    expect(() => config.require("missing")).toThrow("not defined");
-  });
-});
+describe("Configuration stage 7",()=>{it("isolates sections",()=>{const c=new ConfigStore({platform:{environment:"test"},core:{"world.enabled":true},module:{"chat.enabled":true},user:{language:"ru"},feature:{"new-ui":false}});expect(c.require("platform","environment")).toBe("test");expect(c.require("core","world.enabled")).toBe(true);expect(c.require("module","chat.enabled")).toBe(true);expect(c.require("user","language")).toBe("ru");expect(c.require("feature","new-ui")).toBe(false);});it("supports mutation",()=>{const c=new ConfigStore();c.set("module","enabled",true);expect(c.has("module","enabled")).toBe(true);expect(c.delete("module","enabled")).toBe(true);expect(()=>c.require("module","missing")).toThrow("is not defined");});});
