@@ -200,9 +200,4 @@ export class ChatModule extends BaseModule implements ChatModuleApi {
     }
   }
 
-  protected override onDispose(): void {
-    for (const adapter of this.transports.list()) {
-      void adapter;
-    }
-  }
 }
