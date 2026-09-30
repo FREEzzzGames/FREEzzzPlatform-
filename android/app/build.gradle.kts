@@ -3,7 +3,29 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("kotlin-parcelize")
 }
-android { namespace="com.freezzz.platform"; compileSdk=36
-    defaultConfig { applicationId="com.freezzz.platform"; minSdk=26; targetSdk=36; versionCode=1; versionName="0.1.0" }
-    buildFeatures { buildConfig = true }
+
+android {
+    namespace = "com.freezzz.platform"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "com.freezzz.platform"
+        minSdk = 26
+        targetSdk = 36
+        versionCode = 1
+        versionName = "0.1.0"
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
 }
