@@ -24,6 +24,8 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      - name: Prepare Android web assets
+        run: rm -rf android/app/src/main/assets && mkdir -p android/app/src/main/assets/web && cp -R dist/. android/app/src/main/assets/web/
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
