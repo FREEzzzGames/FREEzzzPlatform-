@@ -1,9 +1,16 @@
-# Content Layer — Phase F
+# Content Layer — Phase J
 
-The Content Layer defines normalized game content descriptors, manifests, sources and resolution.
+The Content Layer now provides an integrity-checked game package pipeline.
 
-A game manifest declares its emulator id, entry content and required content. A source owns the bytes; the resolver validates that every declared content item exists before returning an isolated copy of the entry bytes.
+A package consists of a versioned game manifest and descriptors for its entry and required content. The resolver validates:
+- every declared content item exists;
+- content belongs to the declared game;
+- descriptor size matches the actual bytes;
+- SHA-256 checksum matches the actual bytes;
+- the package emulator id matches the requested emulator.
 
-The layer does not download content, contact external stores, execute ROMs, or introduce paid content. Those concerns belong to target-specific adapters or later content delivery work.
+GameContentPackageLoader produces a validated package boundary. GameRuntime consumes the same resolver and refuses incompatible content or an emulator without the required content-loading boundary.
 
-Portal-wide economy and marketplace functionality remain permanently excluded.
+Content remains opaque to the platform. The runtime does not interpret ROM formats; emulator adapters own execution semantics.
+
+No external download service, store, paid content or portal-wide economy is introduced.
