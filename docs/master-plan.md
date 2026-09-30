@@ -31,7 +31,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 25 | Patch System | COMPLETE |
 | 26 | Developer Isolation | COMPLETE |
 | 27 | Testing Architecture | COMPLETE |
-| 28 | Performance Lab | PLANNED |
+| 28 | Performance Lab | COMPLETE |
 | 29 | Security | PLANNED |
 | 30 | Content / ROM layer | PLANNED |
 | 31 | Release Architecture | PLANNED |
@@ -67,6 +67,10 @@ Developer Isolation defines explicit ownership scopes and dependency policies. M
 ## Stage 27 boundary
 
 Testing Architecture defines explicit unit, contract, integration, architecture and conformance layers without coupling tests to a target platform or portal economy.
+
+## Stage 28 boundary
+
+Performance Lab provides normalized benchmark samples and summaries without coupling measurement to a target runtime, UI or portal economy.
 
 ## Global architecture law
 
