@@ -34,7 +34,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 28 | Performance Lab | COMPLETE |
 | 29 | Security | COMPLETE |
 | 30 | Content / ROM layer | COMPLETE |
-| 31 | Release Architecture | PLANNED |
+| 31 | Release Architecture | COMPLETE |
 
 ## Stage 14 boundary
 
@@ -79,6 +79,14 @@ Security provides explicit permission policies, default-deny authorization, boun
 ## Stage 30 boundary
 
 The Content / ROM Layer stores versioned opaque content payloads with descriptor validation and defensive copies. Acquisition, execution, licensing and target-specific delivery remain outside the layer.
+
+## Stage 31 boundary
+
+Release Architecture defines versioned release manifests, target artifacts and the draft-to-candidate-to-released-to-deprecated lifecycle. Publishing, signing and deployment remain external infrastructure.
+
+## Project completion
+
+All 31 planned stages are complete, with Stage 21 permanently excluded by project law.
 
 ## Global architecture law
 
