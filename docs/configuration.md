@@ -1,7 +1,5 @@
 # Configuration v0.7
 
-Configuration provides a small in-memory key/value contract for platform configuration.
+Configuration is the isolated settings layer for platform, core, module, user and feature-flag values.
 
-It owns configuration access and mutation only.
-
-It does not persist values, load environment files, manage secrets, or implement application settings. Persistence belongs to later stages.
+It does not persist data or load environment files; persistence belongs to Storage and platform adapters.
