@@ -25,7 +25,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 19 | RADIO Module | COMPLETE |
 | 20 | LIBRARY Module | COMPLETE |
 | 21 | Marketplace / Collection | REMOVED PERMANENTLY |
-| 22 | Telegram Integration | PLANNED |
+| 22 | Telegram Integration | COMPLETE |
 | 23 | Android | PLANNED |
 | 24 | GitHub / CI/CD | PLANNED |
 | 25 | Patch System | PLANNED |
@@ -43,6 +43,10 @@ Battery Save and Save State share one API but remain semantically distinct. The 
 ## Stage 21 exclusion
 
 Stage 21 is permanently removed from implementation scope: no portal-wide economy, shared coins/currency, marketplace, auctions, buying/selling, paid items or Collection Economy.
+
+## Stage 22 boundary
+
+Telegram Integration defines only a platform-facing Telegram target boundary. Telegram SDKs, Bot API networking, webhooks, polling implementations and credentials remain behind target adapters. The integration does not directly depend on CHAT, LIVE, RADIO or LIBRARY.
 
 ## Global architecture law
 
