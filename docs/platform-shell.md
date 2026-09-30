@@ -46,3 +46,7 @@ The shell does not own game logic, emulator logic, CHAT/LIVE/RADIO/LIBRARY busin
 ## Bootstrap
 
 `PlatformBootstrap` is the explicit host boundary for starting the Platform Shell. It is idempotent, records start/completion timing, and preserves startup failures for diagnostics. The web entry point uses this boundary instead of starting the shell directly.
+
+## Health and readiness
+
+`PlatformHealth` checks the shell, runtime and bootstrap readiness without depending on a UI or target platform. A platform is ready only when the shell is `ready` and the runtime is `running`. Each check returns an explicit status and message so hosts can expose the report without knowing implementation details.
