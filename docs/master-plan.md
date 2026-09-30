@@ -30,7 +30,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 24 | GitHub / CI/CD | COMPLETE |
 | 25 | Patch System | COMPLETE |
 | 26 | Developer Isolation | COMPLETE |
-| 27 | Testing Architecture | PLANNED |
+| 27 | Testing Architecture | COMPLETE |
 | 28 | Performance Lab | PLANNED |
 | 29 | Security | PLANNED |
 | 30 | Content / ROM layer | PLANNED |
@@ -63,6 +63,10 @@ The Patch System provides validated, storage-backed patch operations without net
 ## Stage 26 boundary
 
 Developer Isolation defines explicit ownership scopes and dependency policies. Modules cannot directly depend on other modules; unknown, duplicate and self-dependencies are rejected.
+
+## Stage 27 boundary
+
+Testing Architecture defines explicit unit, contract, integration, architecture and conformance layers without coupling tests to a target platform or portal economy.
 
 ## Global architecture law
 
