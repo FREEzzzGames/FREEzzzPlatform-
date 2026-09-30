@@ -42,3 +42,7 @@ Any startup/stop failure moves the shell to `failed` and preserves the error for
 ## Scope boundary
 
 The shell does not own game logic, emulator logic, CHAT/LIVE/RADIO/LIBRARY business logic, Telegram SDK behavior, Android SDK behavior or any portal-wide economy.
+
+## Bootstrap
+
+`PlatformBootstrap` is the explicit host boundary for starting the Platform Shell. It is idempotent, records start/completion timing, and preserves startup failures for diagnostics. The web entry point uses this boundary instead of starting the shell directly.
