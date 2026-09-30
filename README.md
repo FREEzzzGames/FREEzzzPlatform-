@@ -45,3 +45,8 @@ Open the local Vite address shown in the terminal. Vite is configured to use `we
 npm run build
 npm run preview
 ```
+
+
+## Current execution phase
+
+**Phase A — Production-grade Platform Shell.** The explicit bootstrap boundary and diagnostics are now in place. Physical test/build execution remains delegated to CI until a runnable local Node environment is available.
