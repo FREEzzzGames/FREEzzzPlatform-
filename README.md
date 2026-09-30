@@ -49,4 +49,4 @@ npm run preview
 
 ## Current execution phase
 
-**Phase D — Game Execution.** The Game Execution pipeline now composes emulator, controller, audio, save and optional performance services behind a single target-independent execution boundary. CI remains the authoritative execution path for verification.
+**Phase E — Game Runtime.** The Game Runtime now resolves the first concrete emulator adapter and creates a runnable target-independent game execution session. CI remains the authoritative execution path for verification.
