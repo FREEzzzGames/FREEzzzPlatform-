@@ -27,7 +27,7 @@ describe("GameRuntime", () => {
 
   it("loads entry content before creating the session", () => {
     const source = new MemoryGameContentSource();
-    source.register({ id: "demo-rom", gameId: "demo", kind: "rom", version: "1.0.0", size: 4, checksum: "fe55256b40fa32a5bacc26950bb179b64ed483b5669eec7e8bb417c42cbe7074" }, new Uint8Array([0xa9, 0x42, 0x8d, 0x00]));
+    source.register({ id: "demo-rom", gameId: "demo", kind: "rom", version: "1.0.0", size: 4, checksum: "0e6990423e67339f9554068c379a9321b9e3e25bf9279efb3e1e334429146475" }, new Uint8Array([0xa9, 0x42, 0x8d, 0x00]));
     const registry = new GameContentRegistry();
     registry.register({ gameId: "demo", version: "1.0.0", emulatorId: "nes", entryContentId: "demo-rom", requiredContent: [] });
     const runtime = new GameRuntime({ content: new GameContentResolver(registry, source) });
@@ -40,7 +40,7 @@ describe("GameRuntime", () => {
   it("rejects content when emulator or version is incompatible", () => {
     const source = new MemoryGameContentSource();
     const rom = new Uint8Array([0xa9, 0x42, 0x8d, 0x00]);
-    source.register({ id: "demo-rom", gameId: "demo", kind: "rom", version: "1.0.0", size: 4, checksum: "fe55256b40fa32a5bacc26950bb179b64ed483b5669eec7e8bb417c42cbe7074" }, rom);
+    source.register({ id: "demo-rom", gameId: "demo", kind: "rom", version: "1.0.0", size: 4, checksum: "0e6990423e67339f9554068c379a9321b9e3e25bf9279efb3e1e334429146475" }, rom);
     const registry = new GameContentRegistry();
     registry.register({ gameId: "demo", version: "2.0.0", emulatorId: "nes", entryContentId: "demo-rom", requiredContent: [] });
     const runtime = new GameRuntime({ content: new GameContentResolver(registry, source) });
