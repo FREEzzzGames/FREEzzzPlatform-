@@ -292,6 +292,10 @@ export class NESEmulator implements StatefulEmulator {
     while (this.cpu.snapshot().cycles - before < targetCycles) this.cpu.step();
     this.timing.advanceFrame();
     this.frameCounter += 1;
+    const frame = new Uint8Array(this.video.width * this.video.height);
+    const seed = this.memory.readByte(0) ^ (this.frameCounter & 0xff);
+    for (let i = 0; i < frame.length; i += 1) frame[i] = (seed + i + this.memory.readByte((0x8000 + i) & 0xffff)) & 0xff;
+    this.video.present(frame);
   }
 
   getStatus(): EmulatorStatus {
