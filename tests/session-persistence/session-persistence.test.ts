@@ -18,7 +18,7 @@ function setup() {
   const services = { controller: new DefaultControllerCore(), audio: new DefaultAudioCore(), saves };
   const session = manager.create(catalog, "demo", components, services, "session-a");
   manager.start("session-a");
-  return { session, persistence: new SessionPersistence(saves) };
+  return { session, persistence: new SessionPersistence(saves), emulator: session.execution };
 }
 
 describe("SessionPersistence", () => {
@@ -28,7 +28,19 @@ describe("SessionPersistence", () => {
     const restored = persistence.load(session.id);
     expect(restored?.sessionId).toBe("session-a");
     expect(restored?.gameId).toBe("demo");
+    expect(restored?.emulatorId).toBe("nes");
     expect(Array.from(restored!.payload)).toEqual([1, 2, 3]);
+  });
+
+  it("persists the real emulator snapshot and restores it", () => {
+    const { session, persistence, emulator } = setup();
+    emulator.stepFrame();
+    const saved = persistence.saveSession(session, 100);
+    const savedState = Array.from(saved.payload);
+    emulator.stepFrame();
+    expect(Array.from(persistence.load(session.id)!.payload)).toEqual(savedState);
+    persistence.restoreSession(session);
+    expect(Array.from(persistence.load(session.id)!.payload)).toEqual(savedState);
   });
 
   it("isolates stored payload bytes", () => {
