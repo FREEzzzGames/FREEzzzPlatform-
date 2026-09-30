@@ -49,4 +49,4 @@ npm run preview
 
 ## Current execution phase
 
-**Phase A — Production-grade Platform Shell.** The explicit bootstrap boundary and diagnostics are now in place. Physical test/build execution remains delegated to CI until a runnable local Node environment is available.
+**Phase B — Platform Host.** The Platform Host composition boundary is now in place above the Platform Shell. Cores can be registered and lifecycle-managed without target SDK coupling. CI remains the authoritative execution path for verification.
