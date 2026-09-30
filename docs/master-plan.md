@@ -33,7 +33,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 27 | Testing Architecture | COMPLETE |
 | 28 | Performance Lab | COMPLETE |
 | 29 | Security | COMPLETE |
-| 30 | Content / ROM layer | PLANNED |
+| 30 | Content / ROM layer | COMPLETE |
 | 31 | Release Architecture | PLANNED |
 
 ## Stage 14 boundary
@@ -75,6 +75,10 @@ Performance Lab provides normalized benchmark samples and summaries without coup
 ## Stage 29 boundary
 
 Security provides explicit permission policies, default-deny authorization, bounded input validation and secret redaction without replacing target-specific security controls.
+
+## Stage 30 boundary
+
+The Content / ROM Layer stores versioned opaque content payloads with descriptor validation and defensive copies. Acquisition, execution, licensing and target-specific delivery remain outside the layer.
 
 ## Global architecture law
 
