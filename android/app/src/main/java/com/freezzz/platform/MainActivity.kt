@@ -6,9 +6,21 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
 
+/**
+ * Android target shell.
+ *
+ * Android-specific UI/lifecycle stays inside the Android target. The shared
+ * platform runtime remains target-neutral and is reached through adapters.
+ */
 class MainActivity : Activity() {
+    private lateinit var status: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        status = TextView(this).apply {
+            textSize = 16f
+            text = "FREEzzz Platform\nAndroid host: created"
+        }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
@@ -18,11 +30,24 @@ class MainActivity : Activity() {
             text = "FREEzzz Platform"
             textSize = 28f
         })
-        root.addView(TextView(this).apply {
-            text = "Android host ready"
-            textSize = 16f
-            setPadding(0, 24, 0, 0)
-        })
+        root.addView(status)
         setContentView(root)
+        setHostStatus("ready")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        setHostStatus("running")
+    }
+
+    override fun onStop() {
+        setHostStatus("stopped")
+        super.onStop()
+    }
+
+    private fun setHostStatus(value: String) {
+        if (::status.isInitialized) {
+            status.text = "FREEzzz Platform\nAndroid host: $value"
+        }
     }
 }
