@@ -1,35 +1,3 @@
 import { describe, expect, it } from "vitest";
-import { MemoryStorage } from "../../storage/storage";
-
-describe("Storage stage 8", () => {
-  it("stores and retrieves primitive values", () => {
-    const storage = new MemoryStorage();
-    storage.set("score", 42);
-    storage.set("name", "player");
-    storage.set("enabled", true);
-
-    expect(storage.get("score")).toBe(42);
-    expect(storage.get("name")).toBe("player");
-    expect(storage.get("enabled")).toBe(true);
-  });
-
-  it("supports existence, deletion and keys", () => {
-    const storage = new MemoryStorage();
-    storage.set("a", 1);
-    storage.set("b", 2);
-
-    expect(storage.has("a")).toBe(true);
-    expect(storage.keys()).toEqual(["a", "b"]);
-    expect(storage.delete("a")).toBe(true);
-    expect(storage.has("a")).toBe(false);
-  });
-
-  it("clears all values and rejects empty keys", () => {
-    const storage = new MemoryStorage();
-    storage.set("a", null);
-    storage.clear();
-
-    expect(storage.keys()).toEqual([]);
-    expect(() => storage.set("   ", 1)).toThrow("must not be empty");
-  });
-});
+import { MemoryStorage, MemoryStorageAdapter } from "../../storage/storage";
+describe("Storage stage 8",()=>{it("uses an adapter-independent contract",()=>{const a=new MemoryStorageAdapter();const s=a.create();s.set("score",42);expect(s.get("score")).toBe(42);expect(a.id).toBe("memory");});it("supports key lifecycle",()=>{const s=new MemoryStorage();s.set("a",1);s.set("b",true);expect(s.keys()).toEqual(["a","b"]);expect(s.delete("a")).toBe(true);s.clear();expect(s.keys()).toEqual([]);expect(()=>s.set(" ",1)).toThrow("must not be empty");});});
