@@ -6,7 +6,7 @@ A new modular platform built from zero.
 
 Development follows the corrected 31-stage master plan strictly in order. Every completed action is checked against the plan before the next stage begins.
 
-**Current stage: 13 — First Emulator (NES reference)**
+**Current stage: 14 — Save System**
 
 ## Core principles
 
@@ -20,8 +20,8 @@ Development follows the corrected 31-stage master plan strictly in order. Every 
 
 ## Current foundation scope
 
-Stages 1–12 establish the runtime, modular foundation, SDK, emulator architecture and high-performance backend boundary. Stage 13 adds the first concrete NES reference emulator with deterministic frame timing, controller input and in-memory state restore.
+Stages 1–13 establish the runtime, modular foundation, SDK, emulator architecture, high-performance boundary and first NES reference emulator. Stage 14 adds a storage-backed Save API for both Battery Save and Save State without coupling saves to a game, emulator, UI or target platform.
 
-Full commercial-ROM compatibility is not claimed at this stage. UI and portal modules remain unimplemented.
+No UI or portal economy is implemented at this stage.
 
-See docs/master-plan.md and docs/first-emulator.md.
+See docs/master-plan.md and docs/save-system.md.
