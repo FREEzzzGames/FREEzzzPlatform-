@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MemoryStorage } from "../storage/storage";
-import { DefaultPatchSystem, PatchHistory, StoragePatchStorage } from "../patch-system/patch-system";
+import { MemoryStorage } from "../../storage/storage";
+import { DefaultPatchSystem, PatchHistory, StoragePatchStorage } from "../../patch-system/patch-system";
 
 describe("PatchSystem", () => {
   it("validates and applies add/replace/remove operations", () => {
