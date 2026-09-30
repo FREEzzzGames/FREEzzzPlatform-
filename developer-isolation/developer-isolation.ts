@@ -12,11 +12,11 @@ export interface IsolationViolation { readonly developerId: string; readonly dep
 export interface IsolationReport { readonly valid: boolean; readonly violations: readonly IsolationViolation[]; }
 
 const DEFAULT_ALLOWED_DEPENDENCY_SCOPES: IsolationPolicy["allowedDependencyScopes"] = Object.freeze({
-  core: Object.freeze(["core", "adapter"]),
+  core: Object.freeze(["core", "adapter"] as const),
   module: Object.freeze(["core", "adapter"]),
   adapter: Object.freeze(["core", "adapter"]),
-  platform: Object.freeze(["core", "module", "adapter", "platform"]),
-  tooling: Object.freeze(["tooling"])
+  platform: Object.freeze(["core", "module", "adapter", "platform"] as const),
+  tooling: Object.freeze(["tooling"] as const)
 });
 
 export const DEFAULT_ISOLATION_POLICY: IsolationPolicy = Object.freeze({
