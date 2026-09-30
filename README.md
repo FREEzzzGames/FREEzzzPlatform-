@@ -24,7 +24,7 @@ The 31-stage architecture is complete. Stage 21 remains permanently excluded by 
 
 ## Current execution phase
 
-**Phase J — Real Content Pipeline.** Game content is now resolved as an integrity-checked package with SHA-256 validation, emulator compatibility validation and a normalized runtime loading boundary. CI remains the authoritative execution path for verification.
+**Phase K — Real Platform Adapters.** Web, Android and Telegram now resolve through a normalized target adapter boundary while the platform core remains target-independent. CI remains the authoritative execution path for verification.
 
 No portal-wide economy is implemented.
 
