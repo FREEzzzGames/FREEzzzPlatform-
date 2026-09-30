@@ -167,6 +167,12 @@ export class GameExecutionSession {
     });
   }
 
+  getVideoFrame(): Uint8Array {
+    const video = this.services.emulator as Emulator & { video?: { getFrame?: () => Uint8Array } };
+    const frame = video.video?.getFrame?.();
+    return frame ? frame.slice() : new Uint8Array(0);
+  }
+
   private safeStop(): void {
     try { this.services.emulator.stop(); } finally {
       try { this.services.audio.stop(); } finally {
