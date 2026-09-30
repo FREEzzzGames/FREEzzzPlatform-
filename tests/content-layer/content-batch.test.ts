@@ -1,0 +1,1 @@
+import{describe,expect,it}from"vitest";import{GameContentBatchLoader}from"../../content-layer/content-batch";describe("content batch",()=>{it("is exposed as an isolated batch boundary",()=>{expect(GameContentBatchLoader).toBeDefined();});});
