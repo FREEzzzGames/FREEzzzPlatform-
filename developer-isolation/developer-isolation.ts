@@ -16,8 +16,9 @@ export const DEFAULT_ISOLATION_POLICY: IsolationPolicy = {
     core: Object.freeze(["core", "adapter"]), module: Object.freeze(["core", "adapter"]),
     adapter: Object.freeze(["core", "adapter"]), platform: Object.freeze(["core", "module", "adapter", "platform"]),
     tooling: Object.freeze(["tooling"])
-  }), forbidDuplicateIds: true
-});
+  }),
+  forbidDuplicateIds: true
+};
 
 export class DeveloperIsolation {
   constructor(private readonly policy: IsolationPolicy = DEFAULT_ISOLATION_POLICY) {}
