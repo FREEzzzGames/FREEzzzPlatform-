@@ -18,7 +18,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 12 | Native Performance Core | COMPLETE |
 | 13 | First Emulator (NES reference) | COMPLETE |
 | 14 | Save System | COMPLETE |
-| 15 | Controller Core | NEXT |
+| 15 | Controller Core | COMPLETE |
 | 16 | Audio Core | PLANNED |
 | 17 | CHAT Module | PLANNED |
 | 18 | LIVE Module | PLANNED |
