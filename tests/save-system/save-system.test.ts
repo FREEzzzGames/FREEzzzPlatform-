@@ -32,6 +32,17 @@ describe("Stage 14 — Save System", () => {
     original[0] = 99; saved.payload[1] = 99;
     expect(system.load("SAVE 01")?.payload).toEqual(new Uint8Array([5, 6]));
   });
+
+  it("restores Uint8Array payloads after storage persistence", () => {
+    const storage = new MemoryStorage();
+    const system = new DefaultSaveSystem(new StorageSaveProvider(storage));
+    system.save("SAVE STATE 01", "state", "1.0.0", new Uint8Array([0, 127, 255]), 100);
+
+    const loaded = system.load("SAVE STATE 01");
+    expect(loaded?.payload).toBeInstanceOf(Uint8Array);
+    expect(loaded?.payload).toEqual(new Uint8Array([0, 127, 255]));
+    expect(system.list("state")[0]?.payload).toBeInstanceOf(Uint8Array);
+  });
   it("rejects changing save kind inside the same slot", () => {
     const system = new DefaultSaveSystem(new StorageSaveProvider(new MemoryStorage()));
     system.save("SAVE 01", "battery", "1.0.0", new Uint8Array([1]), 100);
