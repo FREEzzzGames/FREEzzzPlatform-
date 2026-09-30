@@ -4,9 +4,9 @@ A new modular platform built from zero.
 
 ## Project law
 
-Development follows the 31-stage master plan strictly in order. Every completed action is checked against the plan before the next stage begins.
+Development follows the corrected 31-stage master plan strictly in order. Every completed action is checked against the plan before the next stage begins.
 
-**Current stage: 10 — SDK**
+**Current stage: 11 — Emulator Architecture**
 
 ## Core principles
 
@@ -20,6 +20,8 @@ Development follows the 31-stage master plan strictly in order. Every completed 
 
 ## Current foundation scope
 
-Runtime remains the foundation. The Core Registry, Core API, Module Contract, Capability API, Event Bus, Configuration, Storage and Module Manager are implemented as isolated foundation layers. UI, Emulator and application modules remain deliberately unimplemented. The SDK now provides the stable dependency-injected facade over the foundation layers. Stages 7–9 were rechecked against the master plan and corrected before proceeding to SDK.
+Stages 1–9 provide the platform foundation. Stage 10 provides the dependency-injected SDK facade with an explicit CoreResolver boundary. Stage 11 defines the universal emulator boundary and independent CPU, Memory, Video, Audio, Input, Timing and Storage abstractions plus adapter discovery.
 
-See docs/sdk.md.
+No console-specific emulator or UI is implemented at this stage.
+
+See docs/master-plan.md and docs/emulator-architecture.md.
