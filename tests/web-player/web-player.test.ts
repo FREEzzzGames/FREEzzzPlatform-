@@ -12,11 +12,11 @@ import { SessionPersistence } from "../../session-persistence/session-persistenc
 import { GameRuntime } from "../../game-runtime/game-runtime";
 import { NESMemory, NESFrameVideo, NESAudioSink, NESControllerAdapter, NESFixedTiming } from "../../emulators/nes/nes-emulator";
 
-function setup() {
+function setup(storage = new MemoryStorage()) {
   const catalog = new GameCatalog();
   catalog.register({ id: "demo", name: "Demo", version: "1.0.0", emulatorId: "nes", content: { gameId: "demo", version: "1.0.0", emulatorId: "nes", entryContentId: "rom", requiredContent: [] } });
   const components = { cpu: { reset() {}, step() {} }, memory: new NESMemory(), video: new NESFrameVideo(), audio: new NESAudioSink(), input: new NESControllerAdapter(), timing: new NESFixedTiming(), storage: new MemoryStorage() };
-  const services = { controller: new DefaultControllerCore(), audio: new DefaultAudioCore(), saves: new DefaultSaveSystem(new StorageSaveProvider(new MemoryStorage())) };
+  const services = { controller: new DefaultControllerCore(), audio: new DefaultAudioCore(), saves: new DefaultSaveSystem(new StorageSaveProvider(storage)) };
   const source = new MemoryGameContentSource();
   const rom = new Uint8Array([0xea, 0xea, 0x4c, 0x00, 0x80]);
   source.register({ id: "demo-rom", gameId: "demo", kind: "rom", version: "1.0.0", size: rom.length, checksum: sha256(rom) }, rom);
@@ -57,14 +57,15 @@ describe("WebPlayer", () => {
   });
 
   it("continues a persisted game in a fresh player session", () => {
-    const first = setup();
+    const storage = new MemoryStorage();
+    const first = setup(storage);
     first.player.select("demo");
     const firstSession = first.player.launch();
     first.player.frame();
     const savedSessionId = firstSession.id;
     first.player.saveState();
     first.player.exit();
-    const second = setup();
+    const second = setup(storage);
     second.player.select("demo");
     const continued = second.player.continueSaved(savedSessionId);
     expect(continued.id).toBe(savedSessionId);
