@@ -1,1 +1,22 @@
-import{describe,expect,it}from"vitest";import{assertReleaseSecurity,validateReleaseSecurity}from"../../security/release-security";describe("release security",()=>{it("accepts valid release",()=>expect(validateReleaseSecurity({id:"freezzz-platform",version:"1.0.0",target:"web",modules:["chat","live"]})).toEqual([]));it("rejects malformed release",()=>expect(()=>assertReleaseSecurity({id:"FREEZZZ",version:"1",target:"web",modules:["chat","chat"]})).toThrow());});});
+import { describe, expect, it } from "vitest";
+import { assertReleaseSecurity, validateReleaseSecurity } from "../../security/release-security";
+
+describe("release security", () => {
+  it("accepts valid release", () => {
+    expect(validateReleaseSecurity({
+      id: "freezzz-platform",
+      version: "1.0.0",
+      target: "web",
+      modules: ["chat", "live"]
+    })).toEqual([]);
+  });
+
+  it("rejects malformed release", () => {
+    expect(() => assertReleaseSecurity({
+      id: "FREEZZZ",
+      version: "1",
+      target: "web",
+      modules: ["chat", "chat"]
+    })).toThrow();
+  });
+});
