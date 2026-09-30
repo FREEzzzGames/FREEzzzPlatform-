@@ -13,7 +13,7 @@ export interface IsolationReport { readonly valid: boolean; readonly violations:
 
 export const DEFAULT_ISOLATION_POLICY: IsolationPolicy = Object.freeze({
   allowedDependencyScopes: Object.freeze({
-    core: Object.freeze(["core", "adapter"]), module: Object.freeze(["module", "core", "adapter"]),
+    core: Object.freeze(["core", "adapter"]), module: Object.freeze(["core", "adapter"]),
     adapter: Object.freeze(["core", "adapter"]), platform: Object.freeze(["core", "module", "adapter", "platform"]),
     tooling: Object.freeze(["tooling"])
   }), forbidDuplicateIds: true
