@@ -29,11 +29,18 @@ export class GameRuntime {
 
   create(manifest: GameExecutionManifest, components: EmulatorComponents, services: GameRuntimeServices): GameExecutionSession {
     const adapter = this.adapters.resolve(manifest.emulatorId);
+    if (this.content) {
+      const resolved = this.content.resolve(manifest.id, manifest.emulatorId);
+      if (resolved.manifest.version !== manifest.version) {
+        throw new Error("Game content version does not match execution manifest.");
+      }
+    }
     const emulator: Emulator = adapter.create(components);
     if (this.content) {
-      const resolved = this.content.resolve(manifest.id);
+      const resolved = this.content.resolve(manifest.id, manifest.emulatorId);
       const loadProgram = (emulator as Emulator & { loadProgram?: (program: Uint8Array) => void }).loadProgram;
-      if (loadProgram) loadProgram.call(emulator, resolved.entry);
+      if (!loadProgram) throw new Error("Emulator does not expose the required content loading boundary.");
+      loadProgram.call(emulator, resolved.entry);
     }
     const executionServices: GameExecutionServices = {
       emulator,
