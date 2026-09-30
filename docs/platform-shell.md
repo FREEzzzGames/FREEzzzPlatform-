@@ -1,21 +1,44 @@
 # Platform Shell
 
-The Platform Shell is the first runnable host for the completed FREEzzz Platform architecture.
+The Platform Shell is the first runnable host for FREEzzz Platform. It composes the completed foundation contracts without replacing them.
 
-It composes existing platform contracts without making modules depend on each other. The web entry is Vite-based and starts the Runtime, then exposes diagnostics for the core registry, module manager and capability registry.
+## Responsibilities
 
-## Development
+- bootstrap the Runtime;
+- expose Core Registry, Module Manager, Capability Registry, Event Bus, Configuration and Storage;
+- report readiness and health diagnostics;
+- surface startup/runtime errors without crashing the UI;
+- provide a deterministic start/stop/restart lifecycle;
+- remain a host and diagnostics surface rather than becoming a game or economy layer.
+
+## Web entry
+
+The Vite application root is `web/`. The entry point is `web/main.ts`.
+
+Development:
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Production build
+Production verification:
 
 ```bash
+npm run typecheck
+npm test
 npm run build
 npm run preview
 ```
 
-The shell is a host/diagnostics surface, not a game. Games and other content are added as independent cores/modules through the existing contracts.
+The repository environment used for development may not have executed these commands locally. CI is the authoritative execution path when GitHub Actions is available.
+
+## Health model
+
+`created → starting → ready → stopping → stopped`
+
+Any startup/stop failure moves the shell to `failed` and preserves the error for diagnostics.
+
+## Scope boundary
+
+The shell does not own game logic, emulator logic, CHAT/LIVE/RADIO/LIBRARY business logic, Telegram SDK behavior, Android SDK behavior or any portal-wide economy.
