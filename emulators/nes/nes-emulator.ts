@@ -13,6 +13,7 @@ import type {
   Timing,
   Video
 } from "../../emulator/emulator";
+import type { StatefulEmulator } from "../../emulator/emulator";
 
 export interface NESSnapshot {
   readonly pc: number;
@@ -22,6 +23,8 @@ export interface NESSnapshot {
   readonly sp: number;
   readonly status: number;
   readonly cycles: number;
+  readonly frameCounter: number;
+  readonly timing: number;
   readonly memory: Uint8Array;
 }
 
@@ -147,6 +150,11 @@ export class NESFixedTiming implements Timing {
   advanceFrame(): void {
     this.time += this.frameMilliseconds;
   }
+
+  setTime(time: number): void {
+    if (!Number.isFinite(time) || time < 0) throw new RangeError("Timing value must be non-negative.");
+    this.time = time;
+  }
 }
 
 class NES6502 implements CPU {
@@ -175,23 +183,23 @@ class NES6502 implements CPU {
   step(): void {
     const opcode = this.fetch();
     switch (opcode) {
-      case 0xea: this.cycles += 2; break; // NOP
-      case 0xa9: this.a = this.fetch(); this.setZN(this.a); this.cycles += 2; break; // LDA #
-      case 0xa2: this.x = this.fetch(); this.setZN(this.x); this.cycles += 2; break; // LDX #
-      case 0xa0: this.y = this.fetch(); this.setZN(this.y); this.cycles += 2; break; // LDY #
-      case 0x8d: { const address = this.fetchWord(); this.memory.writeByte(address, this.a); this.cycles += 4; break; } // STA abs
-      case 0x8e: { const address = this.fetchWord(); this.memory.writeByte(address, this.x); this.cycles += 4; break; } // STX abs
-      case 0x8c: { const address = this.fetchWord(); this.memory.writeByte(address, this.y); this.cycles += 4; break; } // STY abs
-      case 0xe8: this.x = (this.x + 1) & 0xff; this.setZN(this.x); this.cycles += 2; break; // INX
-      case 0xca: this.x = (this.x - 1) & 0xff; this.setZN(this.x); this.cycles += 2; break; // DEX
-      case 0xc8: this.y = (this.y + 1) & 0xff; this.setZN(this.y); this.cycles += 2; break; // INY
-      case 0x88: this.y = (this.y - 1) & 0xff; this.setZN(this.y); this.cycles += 2; break; // DEY
-      case 0x69: this.a = (this.a + this.fetch() + (this.status & 1)) & 0xff; this.setZN(this.a); this.cycles += 2; break; // ADC #
-      case 0x29: this.a &= this.fetch(); this.setZN(this.a); this.cycles += 2; break; // AND #
-      case 0x09: this.a |= this.fetch(); this.setZN(this.a); this.cycles += 2; break; // ORA #
-      case 0x49: this.a ^= this.fetch(); this.setZN(this.a); this.cycles += 2; break; // EOR #
-      case 0x4c: this.pc = this.fetchWord(); this.cycles += 3; break; // JMP abs
-      case 0x00: this.cycles += 7; break; // BRK stops only at frame boundary in this reference core
+      case 0xea: this.cycles += 2; break;
+      case 0xa9: this.a = this.fetch(); this.setZN(this.a); this.cycles += 2; break;
+      case 0xa2: this.x = this.fetch(); this.setZN(this.x); this.cycles += 2; break;
+      case 0xa0: this.y = this.fetch(); this.setZN(this.y); this.cycles += 2; break;
+      case 0x8d: { const address = this.fetchWord(); this.memory.writeByte(address, this.a); this.cycles += 4; break; }
+      case 0x8e: { const address = this.fetchWord(); this.memory.writeByte(address, this.x); this.cycles += 4; break; }
+      case 0x8c: { const address = this.fetchWord(); this.memory.writeByte(address, this.y); this.cycles += 4; break; }
+      case 0xe8: this.x = (this.x + 1) & 0xff; this.setZN(this.x); this.cycles += 2; break;
+      case 0xca: this.x = (this.x - 1) & 0xff; this.setZN(this.x); this.cycles += 2; break;
+      case 0xc8: this.y = (this.y + 1) & 0xff; this.setZN(this.y); this.cycles += 2; break;
+      case 0x88: this.y = (this.y - 1) & 0xff; this.setZN(this.y); this.cycles += 2; break;
+      case 0x69: this.a = (this.a + this.fetch() + (this.status & 1)) & 0xff; this.setZN(this.a); this.cycles += 2; break;
+      case 0x29: this.a &= this.fetch(); this.setZN(this.a); this.cycles += 2; break;
+      case 0x09: this.a |= this.fetch(); this.setZN(this.a); this.cycles += 2; break;
+      case 0x49: this.a ^= this.fetch(); this.setZN(this.a); this.cycles += 2; break;
+      case 0x4c: this.pc = this.fetchWord(); this.cycles += 3; break;
+      case 0x00: this.cycles += 7; break;
       default: this.cycles += 2; break;
     }
   }
@@ -227,7 +235,7 @@ class NES6502 implements CPU {
   }
 }
 
-export class NESEmulator implements Emulator {
+export class NESEmulator implements StatefulEmulator {
   readonly metadata: EmulatorMetadata = Object.freeze({
     id: "nes",
     name: "NES Reference Emulator",
@@ -306,13 +314,39 @@ export class NESEmulator implements Emulator {
   }
 
   snapshot(): NESSnapshot {
-    return { ...this.cpu.snapshot(), memory: this.memory.snapshot() };
+    return { ...this.cpu.snapshot(), frameCounter: this.frameCounter, timing: this.timing.now(), memory: this.memory.snapshot() };
   }
 
   restore(snapshot: NESSnapshot): void {
+    if (!Number.isInteger(snapshot.frameCounter) || snapshot.frameCounter < 0) throw new Error("NES snapshot frame counter is invalid.");
+    if (!Number.isFinite(snapshot.timing) || snapshot.timing < 0) throw new Error("NES snapshot timing is invalid.");
     this.memory.restore(snapshot.memory);
     this.cpu.restore(snapshot);
-    this.frameCounter = 0;
+    this.frameCounter = snapshot.frameCounter;
+    this.timing.setTime(snapshot.timing);
+  }
+
+  snapshotState(): Uint8Array {
+    const snapshot = this.snapshot();
+    return new TextEncoder().encode(JSON.stringify({ ...snapshot, memory: Array.from(snapshot.memory) }));
+  }
+
+  restoreState(data: Uint8Array): void {
+    let value: NESSnapshot & { memory: number[] };
+    try {
+      value = JSON.parse(new TextDecoder().decode(data)) as NESSnapshot & { memory: number[] };
+    } catch {
+      throw new Error("NES emulator state is not valid JSON.");
+    }
+    if (!Number.isInteger(value.pc) || !Number.isInteger(value.a) || !Number.isInteger(value.x) ||
+        !Number.isInteger(value.y) || !Number.isInteger(value.sp) || !Number.isInteger(value.status) ||
+        !Number.isInteger(value.cycles) || !Number.isInteger(value.frameCounter) ||
+        !Number.isFinite(value.timing) || !Array.isArray(value.memory)) {
+      throw new Error("NES emulator state is invalid.");
+    }
+    const memory = Uint8Array.from(value.memory);
+    if (memory.length !== this.memory.size) throw new Error("NES emulator state has an invalid memory size.");
+    this.restore({ ...value, memory });
   }
 
   getFrameCounter(): number {
