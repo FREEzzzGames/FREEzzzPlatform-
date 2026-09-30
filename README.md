@@ -6,7 +6,7 @@ A new modular platform built from zero.
 
 Development follows the corrected 31-stage master plan strictly in order. Every completed action is checked against the plan before the next stage begins.
 
-**Current stage: 11 — Emulator Architecture**
+**Current stage: 12 — Native Performance Core**
 
 ## Core principles
 
@@ -20,8 +20,8 @@ Development follows the corrected 31-stage master plan strictly in order. Every 
 
 ## Current foundation scope
 
-Stages 1–9 provide the platform foundation. Stage 10 provides the dependency-injected SDK facade with an explicit CoreResolver boundary. Stage 11 defines the universal emulator boundary and independent CPU, Memory, Video, Audio, Input, Timing and Storage abstractions plus adapter discovery.
+Stages 1–9 provide the platform foundation. Stage 10 provides the dependency-injected SDK facade with an explicit CoreResolver boundary. Stage 11 defines the universal emulator boundary. Stage 12 adds the UI-independent native-performance boundary with CPU, GPU and audio execution interfaces plus independent Android-native and WebAssembly adapter targets.
 
-No console-specific emulator or UI is implemented at this stage.
+No console-specific emulator, UI or portal economy is implemented at this stage.
 
-See docs/master-plan.md and docs/emulator-architecture.md.
+See docs/master-plan.md and docs/native-performance.md.
