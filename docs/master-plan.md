@@ -26,7 +26,7 @@ The sequence is fixed. Stages are completed strictly in order, with a cross-chec
 | 20 | LIBRARY Module | COMPLETE |
 | 21 | Marketplace / Collection | REMOVED PERMANENTLY |
 | 22 | Telegram Integration | COMPLETE |
-| 23 | Android | PLANNED |
+| 23 | Android | COMPLETE |
 | 24 | GitHub / CI/CD | PLANNED |
 | 25 | Patch System | PLANNED |
 | 26 | Developer Isolation | PLANNED |
@@ -47,6 +47,10 @@ Stage 21 is permanently removed from implementation scope: no portal-wide econom
 ## Stage 22 boundary
 
 Telegram Integration defines only a platform-facing Telegram target boundary. Telegram SDKs, Bot API networking, webhooks, polling implementations and credentials remain behind target adapters. The integration does not directly depend on CHAT, LIVE, RADIO or LIBRARY.
+
+## Stage 23 boundary
+
+Android Integration defines only the Android target boundary. Android SDK objects, Activity/Context/Intent implementations and native runtime details remain behind Android host adapters. The integration does not directly depend on platform modules or Telegram.
 
 ## Global architecture law
 
