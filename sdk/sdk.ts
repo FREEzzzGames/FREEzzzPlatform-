@@ -6,6 +6,10 @@ import type { EventBus, EventMap } from "../event-bus/event-bus";
 import type { Configuration } from "../configuration/configuration";
 import type { Storage } from "../storage/storage";
 
+export interface CoreResolver {
+  getCore(id: string): Core | undefined;
+}
+
 export interface PlatformSDK<E extends EventMap = EventMap> {
   readonly cores: CoreRegistry;
   readonly modules: ModuleManager;
@@ -23,6 +27,7 @@ export interface SDKDependencies<E extends EventMap = EventMap> {
   readonly events: EventBus<E>;
   readonly configuration: Configuration;
   readonly storage: Storage;
+  readonly coreResolver: CoreResolver;
 }
 
 export class DefaultPlatformSDK<E extends EventMap = EventMap> implements PlatformSDK<E> {
@@ -32,6 +37,7 @@ export class DefaultPlatformSDK<E extends EventMap = EventMap> implements Platfo
   readonly events: EventBus<E>;
   readonly configuration: Configuration;
   readonly storage: Storage;
+  private readonly coreResolver: CoreResolver;
 
   constructor(dependencies: SDKDependencies<E>) {
     this.cores = dependencies.cores;
@@ -40,9 +46,10 @@ export class DefaultPlatformSDK<E extends EventMap = EventMap> implements Platfo
     this.events = dependencies.events;
     this.configuration = dependencies.configuration;
     this.storage = dependencies.storage;
+    this.coreResolver = dependencies.coreResolver;
   }
 
   getCore(id: string): Core | undefined {
-    return this.cores.get(id) as Core | undefined;
+    return this.coreResolver.getCore(id);
   }
 }
