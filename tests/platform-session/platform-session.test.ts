@@ -4,7 +4,7 @@ import { MemoryTargetStorageAdapter } from "../../storage/platform-storage";
 
 describe("PlatformSessionPersistence", () => {
   it("round-trips workspace and selected game state", () => {
-    const adapter = new MemoryTargetStorageAdapter("test");
+    const adapter = new MemoryTargetStorageAdapter("custom");
     const persistence = new PlatformSessionPersistence(adapter);
     const saved = persistence.save({
       workspace: { view: "library", revision: 4 },
@@ -18,9 +18,9 @@ describe("PlatformSessionPersistence", () => {
   });
 
   it("ignores malformed state", () => {
-    const adapter = new MemoryTargetStorageAdapter("test");
+    const adapter = new MemoryTargetStorageAdapter("custom");
     const persistence = new PlatformSessionPersistence(adapter);
-    adapter.set("platform-session", "{bad");
+    adapter.create().set("platform-session", "{bad");
     expect(persistence.load()).toBeUndefined();
   });
 });
