@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TestArchitecture } from "../testing-architecture/testing-architecture";
+import { TestArchitecture } from "../../testing-architecture/testing-architecture";
 
 describe("TestingArchitecture", () => {
   it("registers and resolves independent suites", () => {
