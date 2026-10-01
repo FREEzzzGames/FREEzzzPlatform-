@@ -124,6 +124,7 @@ try {
 
 function render(): void {
   const state = workspace.getState();
+  document.body.dataset.platformView = state.view;
   const diagnostics = host.getDiagnostics();
   mount.innerHTML = `<main class="workspace"><header class="topbar"><div><span class="eyebrow">FREEzzz</span><h1>Platform</h1></div><span class="state state-${state.status}">${state.status.toUpperCase()}</span></header><nav class="nav">${views.map(viewName => `<button class="${state.view === viewName ? "active" : ""}" data-view="${viewName}" type="button">${labels[viewName]}</button>`).join("")}</nav>${state.lastError ? `<div class="error" role="alert"><span>${escapeHtml(state.lastError)}</span><button id="clear-error" type="button">Dismiss</button></div>` : ""}${view(state.view)}<footer><span class="muted">Target ${diagnostics.manifest.target} · ${host.getStatus()}</span><div class="footer-actions"><button id="persist" type="button">Save session</button><button id="restart" type="button">Restart</button></div></footer></main>`;
   document.querySelectorAll<HTMLButtonElement>("[data-view]").forEach(button => button.onclick = () => { workspace.navigate(button.dataset.view as PlatformWorkspaceView); persistSession(); render(); });
