@@ -86,11 +86,10 @@ public class MainActivity extends Activity {
 
         setContentView(webView);
 
-        if (state == null) {
-            webView.loadUrl(LOCAL_SCHEME + "://" + LOCAL_HOST + "/index.html");
-        } else {
-            webView.restoreState(state);
-        }
+        // Always boot the local portal from its canonical entry point.
+        // Restoring WebView history can restore a stale virtual-origin document
+        // without re-establishing the intercepted asset graph.
+        webView.loadUrl(LOCAL_SCHEME + "://" + LOCAL_HOST + "/index.html");
     }
 
     @Override
@@ -120,7 +119,8 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        webView.saveState(outState);
+        // Do not persist WebView navigation state. PlatformSessionPersistence
+        // inside the web runtime owns the portal session instead.
         super.onSaveInstanceState(outState);
     }
 
@@ -153,6 +153,14 @@ public class MainActivity extends Activity {
     }
 
     private static final class LocalAssetWebViewClient extends WebViewClient {
+        @Override
+        public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
+            android.util.Log.e("FREEzzzWeb", "WebView renderer exited; restarting portal");
+            view.stopLoading();
+            view.loadUrl(LOCAL_SCHEME + "://" + LOCAL_HOST + "/index.html");
+            return true;
+        }
+
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
             return serveLocalAsset(view, request.getUrl().getScheme(), request.getUrl().getHost(), request.getUrl().getPath());
