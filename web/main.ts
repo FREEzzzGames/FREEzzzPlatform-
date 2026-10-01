@@ -13,7 +13,6 @@ import { GameRuntime } from "../game-runtime/game-runtime";
 import { WebGamePlayer } from "../web-game-player/web-game-player";
 import { GameLibraryProjection } from "../game-library/game-library";
 import { registerWebDemoGame } from "../game-bootstrap/game-bootstrap";
-import { registerWebDemoGame } from "../game-bootstrap/game-bootstrap";
 import { TelegramIntegration } from "../telegram-integration/telegram-integration";
 import { TelegramWebAppAdapter } from "../telegram-integration/webapp-adapter";
 import { WebStorageAdapter } from "../storage/platform-storage";
