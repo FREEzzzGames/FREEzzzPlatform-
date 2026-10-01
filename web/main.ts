@@ -273,13 +273,13 @@ function liveEmbedUrl(creatorId: string, source: LiveSource): string | undefined
   }
   if (source.kind === "twitch" && source.channel) {
     const parent = window.location.hostname || "freezzgames.github.io";
-    return `https://player.twitch.tv/?${new URLSearchParams({ channel: source.channel, parent, autoplay: "false", muted: "false" }).toString()}`;
+    return `https://player.twitch.tv/?${new URLSearchParams({ channel: source.channel, parent, autoplay: "true", muted: "true" }).toString()}`;
   }
   if (source.kind === "youtube" && source.channel) {
     if (status?.online && status.liveVideoId) {
       return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(status.liveVideoId)}?${new URLSearchParams({ autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString()}`;
     }
-    return `https://www.youtube-nocookie.com/embed/live_stream?${new URLSearchParams({ channel: source.channel, autoplay: "0", rel: "0", playsinline: "1" }).toString()}`;
+    return `https://www.youtube-nocookie.com/embed/live_stream?${new URLSearchParams({ channel: source.channel, autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString()}`;
   }
   return undefined;
 }
