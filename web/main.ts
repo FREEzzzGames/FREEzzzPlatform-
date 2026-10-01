@@ -63,6 +63,7 @@ let radioSelectedId = (() => {
 let radioPlaybackStatus: "idle" | "loading" | "playing" | "paused" | "stopped" | "failed" = "idle";
 const midiController = new WebMidiController();
 let midiOutputs: readonly { id: string; name: string; manufacturer?: string }[] = [];
+let midiInputs: readonly { id: string; name: string; manufacturer?: string }[] = [];
 let midiError = "";
 let midiOctave = 4;
 let midiActiveNotes = new Set<number>();
@@ -325,98 +326,273 @@ async function loadRadioStations(): Promise<void> {
 }
 
 function renderMidiOverlay(): void {
-  const existing = document.querySelector("#midi-overlay");
-  existing?.remove();
+  document.querySelector("#midi-overlay")?.remove();
+
   const overlay = document.createElement("div");
   overlay.id = "midi-overlay";
   overlay.className = "midi-overlay";
-  const notes = Array.from({ length: 24 }, (_, index) => midiOctave * 12 + index);
+
+  const notes = Array.from({ length: 25 }, (_, index) => midiOctave * 12 + index);
   const pads = Array.from({ length: 16 }, (_, index) => index);
-  overlay.innerHTML = `<div class="midi-controller">
-    <header class="midi-header"><div><span class="muted">FREEzzz AUDIO LAB</span><h2>MIDI Controller</h2></div><button id="midi-close" type="button">Close</button></header>
-    <div class="midi-toolbar"><button id="midi-enable-audio" type="button">${midiController.isAudioEnabled() ? "Sound On" : "Enable Sound"}</button><button id="midi-connect" type="button">Connect MIDI</button><select id="midi-output"><option value="">Virtual / no hardware</option>${midiOutputs.map(output => `<option value="${escapeHtml(output.id)}">${escapeHtml(output.name)}</option>`).join("")}</select><button id="midi-octave-down" type="button">− Octave</button><strong>Oct ${midiOctave}</strong><button id="midi-octave-up" type="button">+ Octave</button></div>
-    <div class="midi-status">${midiError ? escapeHtml(midiError) : midiController.getOutput() ? "MIDI output connected · virtual sound active" : midiController.isAudioEnabled() ? "Virtual synth ready" : "Tap Enable Sound to activate the virtual synth"}</div>
-    <section class="midi-surface"><div class="midi-pads">${pads.map(index => `<button class="midi-pad" data-midi-pad="${index}" type="button"><span>${String(index + 1).padStart(2,"0")}</span><strong>PAD</strong></button>`).join("")}</div>
-      <div class="midi-knobs">${[21,22,23,24].map((cc,index)=>`<label class="midi-knob"><span>CC ${cc}</span><input data-midi-cc="${cc}" type="range" min="0" max="127" value="${midiController.getCC(cc)}"><output>${midiController.getCC(cc)}</output><b>K${index+1}</b></label>`).join("")}</div>
-    </section>
-    <section class="midi-asset-library">
-      <div class="midi-keyboard-label">ASSET LIBRARY · CC0</div>
-      <div class="midi-assets">
-        ${MIDI_ASSET_CATALOG.map((asset: MidiAssetItem) => {
-          const saved = loadMidiAssetCollection().includes(asset.id);
-          return `<button class="midi-asset ${saved ? "active" : ""}" data-midi-asset="${escapeHtml(asset.id)}" type="button">
-            <strong>${escapeHtml(asset.name)}</strong>
-            <span>${escapeHtml(asset.category)} · ${escapeHtml(asset.source)}</span>
-            <small>${saved ? "Added to collection" : "Add to collection"}</small>
-          </button>`;
-        }).join("")}
-      </div>
-    </section>
-    <section class="midi-keyboard"><div class="midi-keyboard-label">KEYBOARD</div><div class="midi-keys">${notes.map(note => `<button class="midi-key ${[1,3,6,8,10].includes(note%12) ? "black" : ""} ${midiActiveNotes.has(note) ? "active" : ""}" data-midi-note="${note}" type="button"><span>${midiNoteName(note)}</span></button>`).join("")}</div></section>
-  </div>`;
+  const controls = [
+    { cc: 7, label: "MASTER", short: "VOL" },
+    { cc: 21, label: "FILTER", short: "CUT" },
+    { cc: 22, label: "RESONANCE", short: "RES" },
+    { cc: 23, label: "ATTACK", short: "ATK" },
+    { cc: 24, label: "RELEASE", short: "REL" },
+    { cc: 10, label: "PAN", short: "PAN" },
+    { cc: 1, label: "MODULATION", short: "MOD" },
+    { cc: 11, label: "EXPRESSION", short: "EXP" }
+  ];
+
+  const audioState = midiController.getAudioState();
+  const outputName = midiController.getOutput()?.name ?? "Virtual synth";
+  const inputName = midiController.getInput()?.name ?? "No MIDI input";
+  const soundLabel = midiController.isAudioEnabled() ? "SOUND ON" : "ENABLE SOUND";
+  const statusText = midiError
+    ? midiError
+    : midiController.isAudioEnabled()
+      ? `Virtual synth ready · ${escapeHtml(outputName)}`
+      : audioState === "unavailable"
+        ? "Web Audio is unavailable in this browser."
+        : "Tap ENABLE SOUND once, then play the controller.";
+
+  overlay.innerHTML = `
+    <div class="midi-controller">
+      <header class="midi-header">
+        <div class="midi-brand">
+          <span class="midi-kicker">FREEzzz AUDIO LAB / MIDI-01</span>
+          <h2>MIDI Controller</h2>
+          <p>Standalone virtual instrument · MIDI hardware is optional</p>
+        </div>
+        <div class="midi-header-actions">
+          <span class="midi-live-led ${midiController.isAudioEnabled() ? "on" : ""}"></span>
+          <button id="midi-close" type="button" aria-label="Close MIDI controller">CLOSE</button>
+        </div>
+      </header>
+
+      <section class="midi-console">
+        <div class="midi-transport">
+          <button id="midi-enable-audio" class="midi-primary" type="button">${soundLabel}</button>
+          <button id="midi-connect" type="button">CONNECT MIDI</button>
+          <label>MIDI OUT
+            <select id="midi-output">
+              <option value="">Virtual synth</option>
+              ${midiOutputs.map(output => `<option value="${escapeHtml(output.id)}" ${midiController.getOutput()?.id === output.id ? "selected" : ""}>${escapeHtml(output.name)}</option>`).join("")}
+            </select>
+          </label>
+          <label>MIDI IN
+            <select id="midi-input">
+              <option value="">No input</option>
+              ${midiInputs.map(input => `<option value="${escapeHtml(input.id)}" ${midiController.getInput()?.id === input.id ? "selected" : ""}>${escapeHtml(input.name)}</option>`).join("")}
+            </select>
+          </label>
+          <div class="midi-octave">
+            <button id="midi-octave-down" type="button">−</button>
+            <strong>OCT ${midiOctave}</strong>
+            <button id="midi-octave-up" type="button">+</button>
+          </div>
+        </div>
+        <div class="midi-statusbar">
+          <span class="midi-status-led ${midiController.isAudioEnabled() ? "on" : ""}"></span>
+          <span>${statusText}</span>
+          <span class="midi-status-right">CH ${midiController.getChannel() + 1} · ${inputName}</span>
+        </div>
+      </section>
+
+      <section class="midi-main-grid">
+        <section class="midi-drum-machine">
+          <div class="midi-section-head">
+            <div><span>PERFORMANCE</span><strong>16 PAD BANK</strong></div>
+            <div class="midi-bank-switch"><button id="midi-bank-down" type="button">‹</button><b>BANK ${midiPadBank + 1}</b><button id="midi-bank-up" type="button">›</button></div>
+          </div>
+          <div class="midi-pads">
+            ${pads.map(index => {
+              const note = 36 + midiPadBank * 16 + index;
+              return `<button class="midi-pad" data-midi-pad="${index}" data-midi-pad-note="${note}" type="button">
+                <span class="midi-pad-number">${String(index + 1).padStart(2, "0")}</span>
+                <span class="midi-pad-light"></span>
+                <strong>${["KICK","SNARE","HAT","CLAP","TOM","RIM","PERC","FX"][index % 8]}</strong>
+                <small>NOTE ${note}</small>
+              </button>`;
+            }).join("")}
+          </div>
+        </section>
+
+        <section class="midi-control-deck">
+          <div class="midi-section-head"><div><span>MACRO CONTROL</span><strong>CC PERFORMANCE</strong></div><span class="midi-value-label">0 — 127</span></div>
+          <div class="midi-knob-grid">
+            ${controls.map(control => {
+              const value = midiController.getCC(control.cc);
+              return `<label class="midi-knob">
+                <span class="midi-knob-ring"><input data-midi-cc="${control.cc}" aria-label="${control.label}" type="range" min="0" max="127" value="${value}"></span>
+                <strong>${control.short}</strong>
+                <output>${value}</output>
+                <small>CC ${control.cc}</small>
+              </label>`;
+            }).join("")}
+          </div>
+        </section>
+      </section>
+
+      <section class="midi-keyboard">
+        <div class="midi-section-head">
+          <div><span>PERFORMANCE KEYS</span><strong>25 KEY MINI KEYBOARD</strong></div>
+          <span class="midi-range-label">${midiNoteName(notes[0])} — ${midiNoteName(notes[notes.length - 1])}</span>
+        </div>
+        <div class="midi-keys-wrap">
+          <div class="midi-keys">
+            ${notes.map(note => {
+              const black = [1, 3, 6, 8, 10].includes(note % 12);
+              return `<button class="midi-key ${black ? "black" : "white"} ${midiActiveNotes.has(note) ? "active" : ""}" data-midi-note="${note}" type="button"><span>${midiNoteName(note)}</span></button>`;
+            }).join("")}
+          </div>
+        </div>
+      </section>
+
+      <section class="midi-asset-library">
+        <div class="midi-section-head">
+          <div><span>LOCAL LIBRARY</span><strong>CC0 CONTROLLER ASSETS</strong></div>
+          <small>Stored locally in this browser</small>
+        </div>
+        <div class="midi-assets">
+          ${MIDI_ASSET_CATALOG.map((asset: MidiAssetItem) => {
+            const saved = loadMidiAssetCollection().includes(asset.id);
+            return `<button class="midi-asset ${saved ? "active" : ""}" data-midi-asset="${escapeHtml(asset.id)}" type="button">
+              <strong>${escapeHtml(asset.name)}</strong>
+              <span>${escapeHtml(asset.category)} · ${escapeHtml(asset.source)}</span>
+              <small>${saved ? "COLLECTED" : "ADD TO LIBRARY"}</small>
+            </button>`;
+          }).join("")}
+        </div>
+      </section>
+    </div>`;
+
   document.body.append(overlay);
-  document.querySelector("#midi-close")?.addEventListener("click", () => overlay.remove());
+
+  const close = () => {
+    midiController.setInputNoteHandler(null);
+    overlay.remove();
+  };
+  document.querySelector("#midi-close")?.addEventListener("click", close);
+
+  midiController.setInputNoteHandler((note, _velocity, pressed) => {
+    if (pressed) midiActiveNotes.add(note);
+    else midiActiveNotes.delete(note);
+    const key = overlay.querySelector<HTMLButtonElement>(`[data-midi-note="${note}"]`);
+    key?.classList.toggle("active", pressed);
+  });
+
   document.querySelector("#midi-enable-audio")?.addEventListener("click", async () => {
     midiError = "";
     if (!(await midiController.enableAudio())) midiError = "Audio could not be activated in this browser.";
     renderMidiOverlay();
   });
+
   document.querySelector("#midi-connect")?.addEventListener("click", async () => {
-    try { midiError = ""; midiOutputs = await midiController.connect(); renderMidiOverlay(); }
-    catch (error) { midiError = error instanceof Error ? error.message : String(error); renderMidiOverlay(); }
+    try {
+      midiError = "";
+      const devices = await midiController.connect();
+      midiOutputs = devices.outputs;
+      midiInputs = devices.inputs;
+      renderMidiOverlay();
+    } catch (error) {
+      midiError = error instanceof Error ? error.message : String(error);
+      renderMidiOverlay();
+    }
   });
+
   document.querySelector<HTMLSelectElement>("#midi-output")?.addEventListener("change", event => {
     const id = (event.target as HTMLSelectElement).value;
-    if (id) midiController.setOutput(id);
+    try {
+      midiController.setOutput(id);
+      midiError = "";
+    } catch (error) {
+      midiError = error instanceof Error ? error.message : String(error);
+    }
     renderMidiOverlay();
   });
-  document.querySelector("#midi-octave-down")?.addEventListener("click", () => { midiOctave = Math.max(1, midiOctave - 1); midiController.setOctave(midiOctave); renderMidiOverlay(); });
-  document.querySelector("#midi-octave-up")?.addEventListener("click", () => { midiOctave = Math.min(7, midiOctave + 1); midiController.setOctave(midiOctave); renderMidiOverlay(); });
+
+  document.querySelector<HTMLSelectElement>("#midi-input")?.addEventListener("change", event => {
+    const id = (event.target as HTMLSelectElement).value;
+    try {
+      midiController.setInput(id);
+      midiError = "";
+    } catch (error) {
+      midiError = error instanceof Error ? error.message : String(error);
+    }
+    renderMidiOverlay();
+  });
+
+  document.querySelector("#midi-octave-down")?.addEventListener("click", () => {
+    midiOctave = Math.max(1, midiOctave - 1);
+    midiController.setOctave(midiOctave);
+    renderMidiOverlay();
+  });
+
+  document.querySelector("#midi-octave-up")?.addEventListener("click", () => {
+    midiOctave = Math.min(7, midiOctave + 1);
+    midiController.setOctave(midiOctave);
+    renderMidiOverlay();
+  });
+
+  document.querySelector("#midi-bank-down")?.addEventListener("click", () => {
+    midiPadBank = Math.max(0, midiPadBank - 1);
+    renderMidiOverlay();
+  });
+
+  document.querySelector("#midi-bank-up")?.addEventListener("click", () => {
+    midiPadBank = Math.min(7, midiPadBank + 1);
+    renderMidiOverlay();
+  });
+
+  document.querySelectorAll<HTMLInputElement>("[data-midi-cc]").forEach(input => {
+    input.addEventListener("input", event => {
+      const target = event.target as HTMLInputElement;
+      const cc = Number(target.dataset.midiCc);
+      midiController.controlChange(cc, Number(target.value));
+      const output = target.parentElement?.querySelector("output");
+      if (output) output.value = target.value;
+    });
+  });
+
   document.querySelectorAll<HTMLButtonElement>("[data-midi-pad]").forEach(button => {
-    const index = Number(button.dataset.midiPad);
-    button.addEventListener("pointerdown", event => {
+    const note = Number(button.dataset.midiPadNote);
+    const press = (event: PointerEvent) => {
       event.preventDefault();
       button.setPointerCapture(event.pointerId);
-      midiController.noteOn(36 + midiPadBank * 16 + index, 110);
+      midiController.triggerPad(note, 110);
       button.classList.add("active");
-    });
-    const releasePad = (event: PointerEvent) => {
-      if (!button.classList.contains("active")) return;
-      midiController.noteOff(36 + midiPadBank * 16 + index);
-      button.classList.remove("active");
-      if (button.hasPointerCapture(event.pointerId)) button.releasePointerCapture(event.pointerId);
+      window.setTimeout(() => button.classList.remove("active"), 100);
     };
-    button.addEventListener("pointerup", releasePad);
-    button.addEventListener("pointercancel", releasePad);
+    button.addEventListener("pointerdown", press);
   });
-  document.querySelectorAll<HTMLButtonElement>("[data-midi-asset]").forEach(button => {
-    button.addEventListener("click", () => {
-      toggleMidiAssetCollection(button.dataset.midiAsset ?? "");
-      renderMidiOverlay();
-    });
-  });
-  document.querySelectorAll<HTMLInputElement>("[data-midi-cc]").forEach(input => input.addEventListener("input", event => {
-    const target = event.target as HTMLInputElement;
-    const cc = Number(target.dataset.midiCc);
-    midiController.controlChange(cc, Number(target.value));
-    const output = target.parentElement?.querySelector("output"); if (output) output.value = target.value;
-  }));
+
   document.querySelectorAll<HTMLButtonElement>("[data-midi-note]").forEach(button => {
     const note = Number(button.dataset.midiNote);
-    button.addEventListener("pointerdown", event => {
+    const press = (event: PointerEvent) => {
       event.preventDefault();
       button.setPointerCapture(event.pointerId);
       midiActiveNotes.add(note);
       midiController.noteOn(note, 100);
       button.classList.add("active");
-    });
+    };
     const release = (event: PointerEvent) => {
-      if (midiActiveNotes.delete(note)) midiController.noteOff(note);
+      if (!midiActiveNotes.delete(note)) return;
+      midiController.noteOff(note);
       button.classList.remove("active");
       if (button.hasPointerCapture(event.pointerId)) button.releasePointerCapture(event.pointerId);
     };
+    button.addEventListener("pointerdown", press);
     button.addEventListener("pointerup", release);
     button.addEventListener("pointercancel", release);
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-midi-asset]").forEach(button => {
+    button.addEventListener("click", () => {
+      toggleMidiAssetCollection(button.dataset.midiAsset ?? "");
+      renderMidiOverlay();
+    });
   });
 }
 
