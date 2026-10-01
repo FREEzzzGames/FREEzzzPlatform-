@@ -4,6 +4,9 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+  workflow_run:
+    workflows: ["LIVE playback status"]
+    types: [completed]
 
 permissions:
   contents: read
@@ -16,6 +19,7 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -47,6 +51,8 @@ jobs:
           test ! -f dist/README.md
           grep -q '<script type="module"' dist/index.html
           grep -q 'telegram.org/js/telegram-web-app.js' dist/index.html
+          test -s dist/live-status.json
+          node -e "const d=require('./dist/live-status.json'); if(!d.sources || Object.keys(d.sources).length===0) throw new Error('LIVE cache has zero sources')"
           touch dist/.nojekyll
 
       - name: Configure Pages
