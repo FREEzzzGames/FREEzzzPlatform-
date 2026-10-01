@@ -41,6 +41,14 @@ jobs:
           grep -q 'onShowFileChooser' android/app/src/main/java/com/freezzz/platform/MainActivity.java
           grep -q 'ACTION_OPEN_DOCUMENT' android/app/src/main/java/com/freezzz/platform/MainActivity.java
           grep -q 'FILE_REQUEST' android/app/src/main/java/com/freezzz/platform/MainActivity.java
+      - name: Verify gamepad geometry
+        run: |
+          grep -q '.sega-x{left:0;top:0}' web/styles.css
+          grep -q '.sega-y{left:69px;top:0}' web/styles.css
+          grep -q '.sega-z{left:138px;top:0}' web/styles.css
+          grep -q '.sega-a{left:0;top:60px}' web/styles.css
+          grep -q '.sega-b{left:69px;top:60px}' web/styles.css
+          grep -q '.sega-c{left:138px;top:60px}' web/styles.css
       - name: Verify APK output
         run: |
           test -s android/app/build/outputs/apk/debug/app-debug.apk
