@@ -15,7 +15,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - name: Build web runtime
         run: npm install && npm run build
       - name: Copy web runtime into Android assets
