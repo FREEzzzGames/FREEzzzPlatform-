@@ -335,3 +335,44 @@ body:not([data-platform-view="radio"]) footer .muted{
   body:not([data-platform-view="radio"]) .nav{border-radius:15px}
   body:not([data-platform-view="radio"]) .panel{border-radius:17px}
 }
+
+
+/* RADIO carousel correction: three-card centered viewport; RADIO-only */
+.radio-carousel{
+  overflow:hidden;
+  position:relative;
+  touch-action:pan-y;
+}
+.radio-carousel-track{
+  width:100%;
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  gap:10px;
+  min-height:174px;
+  padding:12px 2px;
+}
+.radio-carousel-card{
+  flex:0 0 27%;
+  min-width:0;
+  min-height:150px;
+}
+.radio-carousel-card.active{
+  flex-basis:42%;
+}
+@media(max-width:760px){
+  .radio-carousel-track{
+    justify-content:center;
+    gap:8px;
+    min-height:160px;
+    padding:12px 0;
+  }
+  .radio-carousel-card{
+    flex:0 0 27%;
+    min-height:136px;
+    padding:13px;
+  }
+  .radio-carousel-card.active{
+    flex-basis:42%;
+  }
+}
