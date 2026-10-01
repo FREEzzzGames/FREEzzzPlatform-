@@ -2,6 +2,9 @@ name: LIVE playback status
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/live-status.yml
   schedule:
     - cron: "17 * * * *"
 
@@ -50,12 +53,27 @@ jobs:
             return response.json();
           }
 
+          async function text(url, options = {}) {
+            const response = await fetch(url, options);
+            if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${url}`);
+            return response.text();
+          }
+
+          function firstYoutubeVideoId(xml) {
+            const match = xml.match(/<yt:videoId[^>]*>([^<]+)<\\/yt:videoId>/);
+            return match?.[1]?.trim();
+          }
+
+          async function latestYoutubeUpload(channelId) {
+            const xml = await text(`https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`);
+            return firstYoutubeVideoId(xml);
+          }
+
           async function refreshYoutube() {
-            if (!process.env.YOUTUBE_API_KEY) return;
             for (const [key, channel] of Object.entries(youtubeChannels)) {
               try {
                 let channelId = channel.id;
-                if (!channelId && channel.handle) {
+                if (!channelId && channel.handle && process.env.YOUTUBE_API_KEY) {
                   const channelUrl = new URL("https://www.googleapis.com/youtube/v3/channels");
                   channelUrl.search = new URLSearchParams({
                     part: "id",
@@ -65,36 +83,44 @@ jobs:
                   const channelResponse = await json(channelUrl);
                   channelId = channelResponse.items?.[0]?.id;
                 }
-                if (!channelId) continue;
-                const liveUrl = new URL("https://www.googleapis.com/youtube/v3/search");
-                liveUrl.search = new URLSearchParams({
-                  part: "snippet",
-                  channelId,
-                  eventType: "live",
-                  type: "video",
-                  maxResults: "1",
-                  key: process.env.YOUTUBE_API_KEY
-                });
-                const live = await json(liveUrl);
-                const completedUrl = new URL("https://www.googleapis.com/youtube/v3/search");
-                completedUrl.search = new URLSearchParams({
-                  part: "snippet",
-                  channelId,
-                  eventType: "completed",
-                  type: "video",
-                  order: "date",
-                  maxResults: "1",
-                  key: process.env.YOUTUBE_API_KEY
-                });
-                const completed = await json(completedUrl);
-                const latestLiveVideoId = completed.items?.[0]?.id?.videoId;
-                const liveItem = live.items?.[0];
-                sources[key] = {
-                  online: Boolean(liveItem?.id?.videoId),
-                  ...(liveItem?.id?.videoId ? { liveVideoId: liveItem.id.videoId } : {}),
-                  ...(latestLiveVideoId ? { fallbackVideoId: latestLiveVideoId } : {}),
-                  checkedAt: now
-                };
+                if (!channelId) {
+                  console.warn("YouTube", key, "channel id unavailable; skipping");
+                  continue;
+                }
+
+                // Always obtain the latest upload through RSS. This makes
+                // offline playback independent from API-key/quota availability.
+                const rssVideoId = await latestYoutubeUpload(channelId);
+
+                if (process.env.YOUTUBE_API_KEY) {
+                  const liveUrl = new URL("https://www.googleapis.com/youtube/v3/search");
+                  liveUrl.search = new URLSearchParams({
+                    part: "snippet", channelId, eventType: "live", type: "video",
+                    maxResults: "1", key: process.env.YOUTUBE_API_KEY
+                  });
+                  const live = await json(liveUrl);
+                  const completedUrl = new URL("https://www.googleapis.com/youtube/v3/search");
+                  completedUrl.search = new URLSearchParams({
+                    part: "snippet", channelId, eventType: "completed", type: "video",
+                    order: "date", maxResults: "1", key: process.env.YOUTUBE_API_KEY
+                  });
+                  const completed = await json(completedUrl);
+                  const liveItem = live.items?.[0];
+                  const completedVideoId = completed.items?.[0]?.id?.videoId;
+                  sources[key] = {
+                    online: Boolean(liveItem?.id?.videoId),
+                    ...(liveItem?.id?.videoId ? { liveVideoId: liveItem.id.videoId } : {}),
+                    ...(completedVideoId ? { fallbackVideoId: completedVideoId } : rssVideoId ? { fallbackVideoId: rssVideoId } : {}),
+                    checkedAt: now
+                  };
+                } else {
+                  sources[key] = {
+                    online: false,
+                    ...(rssVideoId ? { fallbackVideoId: rssVideoId } : {}),
+                    checkedAt: now,
+                    mode: "rss-fallback"
+                  };
+                }
               } catch (error) {
                 console.error("YouTube", key, error.message);
               }
