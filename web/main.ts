@@ -16,6 +16,7 @@ import { TelegramIntegration } from "../telegram-integration/telegram-integratio
 import { TelegramWebAppAdapter } from "../telegram-integration/webapp-adapter";
 import { WebStorageAdapter } from "../storage/platform-storage";
 import { RadioBrowserClient, RADIO_GENRES, type RadioBrowserStation } from "./radio-browser";
+import { WebMidiController, midiNoteName } from "./midi-controller";
 import "./styles.css";
 
 const shell = new PlatformShell();
@@ -55,6 +56,12 @@ let radioLoading = false;
 let radioError = "";
 let radioRequestId = 0;
 let radioSelectedId = "";
+const midiController = new WebMidiController();
+let midiOutputs: readonly { id: string; name: string; manufacturer?: string }[] = [];
+let midiError = "";
+let midiOctave = 4;
+let midiActiveNotes = new Set<number>();
+let midiPadBank = 0;
 const liveChannels = [
   {
     id: "woodskiy-ded",
@@ -163,7 +170,7 @@ function view(current: PlatformWorkspaceView): string {
       </div>
     </section>`;
   }
-  return `<section class="panel radio-portal"><span class="muted">PUBLIC RADIO</span><h2>Internet Radio</h2><p>Public internet stations from Radio Browser. Choose a genre, search a station, then press Play.</p><div id="radio-audio-host" class="radio-audio-host"></div><div class="radio-toolbar"><form id="radio-search-form" class="inline-form"><input id="radio-search-input" value="${escapeHtml(radioQuery)}" maxlength="80" autocomplete="off" placeholder="Search station"><button type="submit">Search</button></form></div><div class="radio-genres">${RADIO_GENRES.map(genre=>`<button class="${radioGenre===genre?"active":""}" data-radio-genre="${genre}" type="button">${escapeHtml(genre)}</button>`).join("")}</div><div class="radio-status">${radioLoading?"Loading stations…":radioError?escapeHtml(radioError):radioStations.length+" stations"}</div><div class="list radio-stations">${radioStations.map(station=>`<div class="row radio-station"><div><strong>${escapeHtml(station.name)}</strong><span>${escapeHtml(station.country||"International")} · ${escapeHtml(station.codec||"stream")} · ${station.bitrate||0} kbps</span></div><button data-radio-station="${escapeHtml(station.stationuuid)}" type="button">${radioSelectedId===station.stationuuid?"Playing":"Play"}</button></div>`).join("")}</div><div class="muted">Catalog: Radio Browser · HTTPS streams only</div></section>`;
+  return `<section class="panel radio-portal"><span class="muted">PUBLIC RADIO</span><div class="radio-heading"><div><h2>Internet Radio</h2><p>Public internet stations from Radio Browser. Choose a genre, search a station, then press Play.</p></div><button id="open-midi" class="midi-open-button" type="button">♫ MIDI Controller</button></div><div id="radio-audio-host" class="radio-audio-host"></div><div class="radio-toolbar"><form id="radio-search-form" class="inline-form"><input id="radio-search-input" value="${escapeHtml(radioQuery)}" maxlength="80" autocomplete="off" placeholder="Search station"><button type="submit">Search</button></form></div><div class="radio-genres">${RADIO_GENRES.map(genre=>`<button class="${radioGenre===genre?"active":""}" data-radio-genre="${genre}" type="button">${escapeHtml(genre)}</button>`).join("")}</div><div class="radio-status">${radioLoading?"Loading stations…":radioError?escapeHtml(radioError):radioStations.length+" stations"}</div><div class="list radio-stations">${radioStations.map(station=>`<div class="row radio-station"><div><strong>${escapeHtml(station.name)}</strong><span>${escapeHtml(station.country||"International")} · ${escapeHtml(station.codec||"stream")} · ${station.bitrate||0} kbps</span></div><button data-radio-station="${escapeHtml(station.stationuuid)}" type="button">${radioSelectedId===station.stationuuid?"Playing":"Play"}</button></div>`).join("")}</div><div class="muted">Catalog: Radio Browser · HTTPS streams only</div></section>`;
 }
 
 function bind(current: PlatformWorkspaceView): void {
@@ -203,6 +210,7 @@ function bind(current: PlatformWorkspaceView): void {
     document.querySelectorAll<HTMLButtonElement>("[data-radio-station]").forEach(button => button.addEventListener("click", () => {
       void playRadioStation(button.dataset.radioStation ?? "");
     }));
+    document.querySelector("#open-midi")?.addEventListener("click", () => { renderMidiOverlay(); });
     if (!radioStations.length && !radioLoading && !radioError) void loadRadioStations();
   }
 }
@@ -226,6 +234,58 @@ async function loadRadioStations(): Promise<void> {
       render();
     }
   }
+}
+
+function renderMidiOverlay(): void {
+  const existing = document.querySelector("#midi-overlay");
+  if (existing) { existing.remove(); return; }
+  const overlay = document.createElement("div");
+  overlay.id = "midi-overlay";
+  overlay.className = "midi-overlay";
+  const notes = Array.from({ length: 24 }, (_, index) => midiOctave * 12 + index);
+  const pads = Array.from({ length: 16 }, (_, index) => index);
+  overlay.innerHTML = `<div class="midi-controller">
+    <header class="midi-header"><div><span class="muted">FREEzzz AUDIO LAB</span><h2>MIDI Controller</h2></div><button id="midi-close" type="button">Close</button></header>
+    <div class="midi-toolbar"><button id="midi-connect" type="button">Connect MIDI</button><select id="midi-output"><option value="">Virtual / no hardware</option>${midiOutputs.map(output => `<option value="${escapeHtml(output.id)}">${escapeHtml(output.name)}</option>`).join("")}</select><button id="midi-octave-down" type="button">− Octave</button><strong>Oct ${midiOctave}</strong><button id="midi-octave-up" type="button">+ Octave</button></div>
+    <div class="midi-status">${midiError ? escapeHtml(midiError) : midiController.getOutput() ? "MIDI output connected" : "Virtual controller ready"}</div>
+    <section class="midi-surface"><div class="midi-pads">${pads.map(index => `<button class="midi-pad" data-midi-pad="${index}" type="button"><span>${String(index + 1).padStart(2,"0")}</span><strong>PAD</strong></button>`).join("")}</div>
+      <div class="midi-knobs">${[21,22,23,24].map((cc,index)=>`<label class="midi-knob"><span>CC ${cc}</span><input data-midi-cc="${cc}" type="range" min="0" max="127" value="${midiController.getCC(cc)}"><output>${midiController.getCC(cc)}</output><b>K${index+1}</b></label>`).join("")}</div>
+    </section>
+    <section class="midi-keyboard"><div class="midi-keyboard-label">KEYBOARD</div><div class="midi-keys">${notes.map(note => `<button class="midi-key ${[1,3,6,8,10].includes(note%12) ? "black" : ""} ${midiActiveNotes.has(note) ? "active" : ""}" data-midi-note="${note}" type="button"><span>${midiNoteName(note)}</span></button>`).join("")}</div></section>
+  </div>`;
+  document.body.append(overlay);
+  document.querySelector("#midi-close")?.addEventListener("click", () => overlay.remove());
+  document.querySelector("#midi-connect")?.addEventListener("click", async () => {
+    try { midiError = ""; midiOutputs = await midiController.connect(); renderMidiOverlay(); }
+    catch (error) { midiError = error instanceof Error ? error.message : String(error); renderMidiOverlay(); }
+  });
+  document.querySelector<HTMLSelectElement>("#midi-output")?.addEventListener("change", event => {
+    const id = (event.target as HTMLSelectElement).value;
+    if (id) midiController.setOutput(id);
+    renderMidiOverlay();
+  });
+  document.querySelector("#midi-octave-down")?.addEventListener("click", () => { midiOctave = Math.max(1, midiOctave - 1); midiController.setOctave(midiOctave); renderMidiOverlay(); });
+  document.querySelector("#midi-octave-up")?.addEventListener("click", () => { midiOctave = Math.min(7, midiOctave + 1); midiController.setOctave(midiOctave); renderMidiOverlay(); });
+  document.querySelectorAll<HTMLButtonElement>("[data-midi-pad]").forEach(button => {
+    const index = Number(button.dataset.midiPad);
+    button.addEventListener("pointerdown", () => { midiController.noteOn(36 + midiPadBank * 16 + index, 110); button.classList.add("active"); });
+    button.addEventListener("pointerup", () => { midiController.noteOff(36 + midiPadBank * 16 + index); button.classList.remove("active"); });
+    button.addEventListener("pointerleave", () => { if (button.classList.contains("active")) { midiController.noteOff(36 + midiPadBank * 16 + index); button.classList.remove("active"); } });
+  });
+  document.querySelectorAll<HTMLInputElement>("[data-midi-cc]").forEach(input => input.addEventListener("input", event => {
+    const target = event.target as HTMLInputElement;
+    const cc = Number(target.dataset.midiCc);
+    midiController.controlChange(cc, Number(target.value));
+    const output = target.parentElement?.querySelector("output"); if (output) output.value = target.value;
+  }));
+  document.querySelectorAll<HTMLButtonElement>("[data-midi-note]").forEach(button => {
+    const note = Number(button.dataset.midiNote);
+    button.addEventListener("pointerdown", () => { midiActiveNotes.add(note); midiController.noteOn(note, 100); button.classList.add("active"); });
+    const release = () => { if (midiActiveNotes.delete(note)) midiController.noteOff(note); button.classList.remove("active"); };
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointerleave", release);
+    button.addEventListener("pointercancel", release);
+  });
 }
 
 async function playRadioStation(stationId: string): Promise<void> {
