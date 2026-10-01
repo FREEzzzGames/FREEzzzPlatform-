@@ -145,6 +145,7 @@ const LIVE_CUSTOM_STORAGE_KEY = "freezzz:live:custom-creators";
 let customLiveCreators: LiveCreator[] = loadCustomLiveCreators();
 let selectedLiveCreatorId = liveCreators[0].id;
 let selectedLiveSourceId = liveCreators[0].sources[0].id;
+let liveDetailCreatorId: string | undefined;
 let livePopup: LivePopup | undefined;
 let livePlaybackStatus: LivePlaybackStatusFile = { sources: {} };
 
@@ -498,66 +499,69 @@ function view(current: PlatformWorkspaceView): string {
       return "ready";
     };
 
-    return `<section class="panel live-portal">
-      <div class="live-title-row">
-        <div>
-          <span class="muted">LIVE</span>
-          <h2>Стримы</h2>
-          <p>Онлайн-стрим открывается сразу. Если блогер офлайн, LIVE показывает последнюю доступную запись.</p>
-        </div>
-        <div class="live-title-actions">
-          <span class="live-count">${livePopup ? "1 player" : "No player"}</span>
-          <button id="live-add-streamer" class="live-add-button" type="button">＋ Добавить стримера</button>
-        </div>
-      </div>
-
-      <div class="live-feature">
-        <div class="live-feature-head">
-          <div class="live-creator-title">
-            <div class="live-avatar">${escapeHtml(selected.name.slice(0, 2).toUpperCase())}</div>
-            <div>
-              <strong>${escapeHtml(selected.name)}</strong>
-              <span>${escapeHtml(selected.region)} · ${escapeHtml(selected.categories.join(" · "))}</span>
-              <em class="live-state ${stateClass(selected.id, source)}">${stateLabel(selected.id, source)}</em>
-            </div>
+    if (!liveDetailCreatorId) {
+      return `<section class="panel live-portal live-list-view">
+        <div class="live-list-head">
+          <div>
+            <span class="muted">LIVE</span>
+            <h2>Стримеры</h2>
+            <p>Выбери стримера, чтобы открыть его профиль и управление трансляциями.</p>
           </div>
-          <div class="live-feature-actions">
-            <button class="live-open" data-live-open-creator="${escapeHtml(selected.id)}" data-live-open-source="${escapeHtml(source.id)}" type="button">▶ Смотреть</button>
-            <a class="live-direct" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">Канал ↗</a>
-          </div>
+          <button id="live-add-streamer" class="live-add-button" type="button">＋ Добавить</button>
         </div>
-        <div class="live-source-tabs">
-          ${selected.sources.map(item => `<button class="live-source ${item.id === source.id ? "active" : ""}" data-live-open-creator="${escapeHtml(selected.id)}" data-live-open-source="${escapeHtml(item.id)}" type="button"><span>${escapeHtml(item.label)}</span><small>${stateLabel(selected.id, item)}</small></button>`).join("")}
-        </div>
-      </div>
-
-      <div class="live-catalog-head">
-        <div><strong>Все блогеры</strong><span>Системные + добавленные тобой. Нажми карточку для выбора.</span></div>
-        <span>${liveCatalog.length} всего</span>
-      </div>
-
-      <div class="live-catalog">
-        ${liveCatalog.map(creator => {
-          const creatorSource = creator.sources[0];
-          return `<article class="live-card ${creator.id === selected.id ? "active" : ""}">
-            <button class="live-card-select" data-live-creator="${escapeHtml(creator.id)}" type="button">
+        <div class="live-simple-list" role="list">
+          ${liveCatalog.map(creator => {
+            const creatorSource = creator.sources[0];
+            return `<button class="live-simple-row" data-live-creator="${escapeHtml(creator.id)}" type="button">
               <span class="live-avatar small">${escapeHtml(creator.name.slice(0, 2).toUpperCase())}</span>
-              <span class="live-card-main">
+              <span class="live-simple-main">
                 <strong>${escapeHtml(creator.name)}</strong>
                 <span>${escapeHtml(creator.region)}</span>
-                <small>${escapeHtml(creator.categories.join(" · "))}</small>
-                <em class="live-state ${stateClass(creator.id, creatorSource)}">${stateLabel(creator.id, creatorSource)}</em>
+                <small>${escapeHtml(creator.categories.join(" · "))} · ${stateLabel(creator.id, creatorSource)}</small>
               </span>
-              <span class="live-source-count">${creator.custom ? "CUSTOM" : creator.sources.length + " src"}</span>
-            </button>
-            <button class="live-card-watch" data-live-open-creator="${escapeHtml(creator.id)}" data-live-open-source="${escapeHtml(creatorSource.id)}" type="button" aria-label="Смотреть ${escapeHtml(creator.name)}">▶</button>
-            ${creator.custom ? '<button class="live-card-remove" data-live-remove="' + escapeHtml(creator.id) + '" type="button" aria-label="Удалить ' + escapeHtml(creator.name) + '">×</button>' : ""}
-          </article>`;
-        }).join("")}
+              <span class="live-simple-arrow" aria-hidden="true">›</span>
+            </button>`;
+          }).join("")}
+        </div>
+      </section>`;
+    }
+
+    const detail = allLiveCreators().find(creator => creator.id === liveDetailCreatorId) ?? liveCatalog[0];
+    if (!detail) return `<section class="panel live-portal"><p>Стримеры пока не зарегистрированы.</p></section>`;
+    const detailSource = detail.sources.find(item => item.id === selectedLiveSourceId) ?? detail.sources[0];
+    const detailState = statusFor(detail.id, detailSource);
+    const detailDescription = `${detail.name} — ${detail.categories.join(", ")}. ${detail.region}. Здесь доступны трансляции и последняя доступная запись, если стрим сейчас офлайн.`;
+    return `<section class="panel live-portal live-detail-view">
+      <div class="live-detail-head">
+        <button id="live-back-list" class="live-back-button" type="button">‹ Стримеры</button>
+        <button id="live-add-streamer" class="live-add-button" type="button">＋ Добавить</button>
       </div>
-
-
+      <div class="live-detail-profile">
+        <div class="live-avatar">${escapeHtml(detail.name.slice(0, 2).toUpperCase())}</div>
+        <div class="live-detail-copy">
+          <span class="muted">LIVE / ПРОФИЛЬ</span>
+          <h2>${escapeHtml(detail.name)}</h2>
+          <span>${escapeHtml(detail.region)} · ${escapeHtml(detail.categories.join(" · "))}</span>
+          <p>${escapeHtml(detailDescription)}</p>
+        </div>
+      </div>
+      <div class="live-detail-status">
+        <strong>Трансляции</strong>
+        <span>${detail.sources.length} источник(а) · ${detailState?.online ? "ONLINE" : detailState?.fallbackVideoId ? "RECORDING" : detailState?.checkedAt ? "OFFLINE" : "READY"}</span>
+      </div>
+      <div class="live-source-menu">
+        ${detail.sources.map(item => `<button class="live-source-action ${item.id === detailSource.id ? "active" : ""}" data-live-open-source="${escapeHtml(detail.id)}" data-live-open-source-id="${escapeHtml(item.id)}" type="button">
+          <span><strong>${escapeHtml(item.label)}</strong><small>${stateLabel(detail.id, item)}</small></span>
+          <b>▶</b>
+        </button>`).join("")}
+      </div>
+      <div class="live-detail-actions">
+        <button class="live-watch-primary" data-live-open-source="${escapeHtml(detail.id)}" data-live-open-source-id="${escapeHtml(detailSource.id)}" type="button">▶ Включить трансляцию</button>
+        <a class="live-direct" href="${escapeHtml(detailSource.url)}" target="_blank" rel="noopener noreferrer">Открыть канал ↗</a>
+        ${detail.custom ? `<button class="live-remove-detail" data-live-remove="${escapeHtml(detail.id)}" type="button">Удалить стримера</button>` : ""}
+      </div>
     </section>`;
+
   }
   const selectedStation = radioStations.find(station => station.stationuuid === radioSelectedId) ?? radioStations[0];
   const selectedIndex = selectedStation ? radioStations.findIndex(station => station.stationuuid === selectedStation.stationuuid) : -1;
