@@ -226,8 +226,7 @@ function view(current: PlatformWorkspaceView): string {
     <div id="radio-audio-host" class="radio-audio-host"></div>
     <div class="radio-toolbar"><form id="radio-search-form" class="inline-form"><input id="radio-search-input" value="${escapeHtml(radioQuery)}" maxlength="80" autocomplete="off" placeholder="Search station"><button type="submit">Search</button></form></div>
     <div class="radio-genres">${RADIO_GENRES.map(genre=>`<button class="${radioGenre===genre?"active":""}" data-radio-genre="${genre}" type="button">${escapeHtml(genre)}</button>`).join("")}</div>
-    <div class="radio-status">${radioLoading?"Loading stations…":radioError?escapeHtml(radioError):radioStations.length+" stations"}</div>
-    <div class="muted">Swipe the carousel or tap a station card to change selection.</div>
+    ${radioError ? `<div class="radio-status">${escapeHtml(radioError)}</div>` : ""}
   </section>`;
 }
 
