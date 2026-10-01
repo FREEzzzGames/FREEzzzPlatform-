@@ -182,109 +182,57 @@ function loadCustomLiveCreators(): LiveCreator[] {
 function saveCustomLiveCreators(): void {
   try { localStorage.setItem(LIVE_CUSTOM_STORAGE_KEY, JSON.stringify(customLiveCreators)); } catch {}
 }
-function normalizeLiveUrl(value: string): string | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  try {
-    const candidate = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : "https://" + trimmed);
-    if (candidate.protocol !== "https:") return undefined;
-    return candidate.toString();
-  } catch {
-    return undefined;
-  }
+function addLiveCreatorToScreen(creatorId: string, sourceId?: string): void {
+  const creator = allLiveCreators().find(item => item.id === creatorId);
+  if (!creator) return;
+  const source = creator.sources.find(item => item.id === sourceId) ?? creator.sources[0];
+  if (!source) return;
+  selectedLiveCreatorId = creator.id;
+  selectedLiveSourceId = source.id;
+  openLivePopup(creator.id, source.id);
 }
-function parseCustomLiveCreator(rawUrl: string): LiveCreator | undefined {
-  const normalized = normalizeLiveUrl(rawUrl);
-  if (!normalized) return undefined;
-  const url = new URL(normalized);
-  const host = url.hostname.toLowerCase().replace(/^www\./, "");
-  const parts = url.pathname.split("/").filter(Boolean);
-  const id = "custom-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
-  if (host === "twitch.tv") {
-    const login = parts[0]?.toLowerCase();
-    if (!login || !/^[a-z0-9_]{3,30}$/.test(login)) return undefined;
-    return {
-      id, name: login, region: "CUSTOM · Twitch", categories: ["Twitch"], custom: true,
-      sources: [{ id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/" + login, channel: login }]
-    };
-  }
-  if (host === "youtube.com" || host === "m.youtube.com" || host === "youtu.be") {
-    let videoId: string | undefined;
-    let channelId: string | undefined;
-    let youtubeHandle: string | undefined;
-    if (host === "youtu.be") videoId = parts[0];
-    else if (url.searchParams.get("v")) videoId = url.searchParams.get("v") ?? undefined;
-    else if (parts[0] === "live" || parts[0] === "shorts") videoId = parts[1];
-    else if (parts[0] === "channel" && parts[1]?.startsWith("UC")) channelId = parts[1];
-    else if (parts[0]?.startsWith("@")) youtubeHandle = parts[0].slice(1);
-    else if (parts[0] && !["watch", "feed", "videos", "streams"].includes(parts[0])) youtubeHandle = parts[0];
-    if (!videoId && !channelId && !youtubeHandle) return undefined;
-    const source: LiveSource = {
-      id: "youtube", label: "YouTube", kind: "youtube", url: normalized,
-      ...(videoId ? { videoId } : {}),
-      ...(channelId ? { channel: channelId } : {}),
-      ...(youtubeHandle ? { youtubeHandle } : {})
-    };
-    return {
-      id, name: youtubeHandle || channelId?.slice(0, 12) || "YouTube",
-      region: "CUSTOM · YouTube", categories: ["YouTube"], custom: true, sources: [source]
-    };
-  }
-  return undefined;
-}
-function removeCustomLiveCreator(creatorId: string): void {
-  customLiveCreators = customLiveCreators.filter(creator => creator.id !== creatorId);
-  livePopups = livePopups.filter(popup => popup.creatorId !== creatorId);
-  if (selectedLiveCreatorId === creatorId) {
-    const fallback = allLiveCreators()[0];
-    selectedLiveCreatorId = fallback.id;
-    selectedLiveSourceId = fallback.sources[0].id;
-  }
-  saveCustomLiveCreators();
-  render();
-}
+
 function openLiveAddModal(): void {
   document.querySelector("#live-add-modal")?.remove();
   const overlay = document.createElement("div");
   overlay.id = "live-add-modal";
   overlay.className = "live-add-modal";
+  const creators = allLiveCreators();
+
   overlay.innerHTML =
-    '<form class="live-add-dialog" id="live-add-form">' +
-    '<div class="live-add-head"><div><span class="muted">LIVE / CUSTOM</span><h3>Добавить стримера</h3><p>Вставь ссылку Twitch или YouTube.</p></div><button id="live-add-close" class="live-add-close" type="button" aria-label="Закрыть">×</button></div>' +
-    '<label class="live-add-label">Ссылка на канал или видео<input id="live-add-url" type="url" required autocomplete="off" placeholder="https://twitch.tv/... или https://youtube.com/..."></label>' +
-    '<div id="live-add-error" class="live-add-error" role="alert"></div>' +
-    '<div class="live-add-actions"><button id="live-add-cancel" type="button">Отмена</button><button type="submit" class="live-add-submit">Добавить</button></div>' +
-    '</form>';
+    '<div class="live-add-dialog" role="dialog" aria-modal="true" aria-labelledby="live-add-title">' +
+    '<div class="live-add-head"><div><span class="muted">LIVE / STREAM PICKER</span><h3 id="live-add-title">Добавить стримера</h3><p>Выбери блогера и сразу добавь его стрим на экран.</p></div><button id="live-add-close" class="live-add-close" type="button" aria-label="Закрыть">×</button></div>' +
+    '<div class="live-streamer-list">' +
+    creators.map(creator => {
+      const primary = creator.sources[0];
+      const activeCount = livePopups.filter(popup => popup.creatorId === creator.id).length;
+      return '<article class="live-streamer-row">' +
+        '<div class="live-streamer-avatar">' + escapeHtml(creator.name.slice(0, 2).toUpperCase()) + '</div>' +
+        '<div class="live-streamer-info"><strong>' + escapeHtml(creator.name) + '</strong><span>' + escapeHtml(creator.region) + '</span><small>' + escapeHtml(creator.categories.join(" · ")) + '</small></div>' +
+        '<div class="live-streamer-actions">' +
+        creator.sources.map(source => '<button class="live-stream-source" data-live-add-source="' + escapeHtml(creator.id) + '" data-live-add-source-id="' + escapeHtml(source.id) + '" type="button">▶ ' + escapeHtml(source.label) + '</button>').join("") +
+        '<button class="live-stream-add" data-live-add-creator="' + escapeHtml(creator.id) + '" type="button">' + (activeCount ? "Добавлен · " + activeCount : "＋ Добавить") + '</button>' +
+        '</div></article>';
+    }).join("") +
+    '</div></div>';
+
   document.body.append(overlay);
   const close = () => overlay.remove();
   overlay.querySelector("#live-add-close")?.addEventListener("click", close);
-  overlay.querySelector("#live-add-cancel")?.addEventListener("click", close);
   overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
-  overlay.querySelector<HTMLFormElement>("#live-add-form")?.addEventListener("submit", event => {
-    event.preventDefault();
-    const input = overlay.querySelector<HTMLInputElement>("#live-add-url");
-    const error = overlay.querySelector<HTMLElement>("#live-add-error");
-    const creator = parseCustomLiveCreator(input?.value ?? "");
-    if (!creator) {
-      if (error) error.textContent = "Нужна корректная HTTPS-ссылка Twitch или YouTube.";
-      return;
-    }
-    const source = creator.sources[0];
-    const duplicate = allLiveCreators().some(item => item.sources.some(existing =>
-      existing.url === source.url || (source.channel && existing.kind === source.kind && existing.channel === source.channel)
-    ));
-    if (duplicate) {
-      if (error) error.textContent = "Этот стример уже есть в каталоге.";
-      return;
-    }
-    customLiveCreators = [...customLiveCreators, creator];
-    saveCustomLiveCreators();
-    selectedLiveCreatorId = creator.id;
-    selectedLiveSourceId = creator.sources[0].id;
-    close();
-    render();
+
+  overlay.querySelectorAll<HTMLButtonElement>("[data-live-add-creator]").forEach(button => {
+    button.addEventListener("click", () => {
+      addLiveCreatorToScreen(button.dataset.liveAddCreator ?? "");
+      close();
+    });
   });
-  window.setTimeout(() => overlay.querySelector<HTMLInputElement>("#live-add-url")?.focus(), 0);
+  overlay.querySelectorAll<HTMLButtonElement>("[data-live-add-source]").forEach(button => {
+    button.addEventListener("click", () => {
+      addLiveCreatorToScreen(button.dataset.liveAddSource ?? "", button.dataset.liveAddSourceId ?? "");
+      close();
+    });
+  });
 }
 function liveStatusKey(creatorId: string, sourceId: string): string {
   return `${creatorId}:${sourceId}`;
@@ -692,6 +640,8 @@ function bind(current: PlatformWorkspaceView): void {
     }));
 
     document.querySelector("#live-add-streamer")?.addEventListener("click", openLiveAddModal);
+
+    // The picker is the only custom-stream entry point: no URL insertion flow.
 
     document.querySelectorAll<HTMLButtonElement>("[data-live-remove]").forEach(button => {
       const remove = (event: Event) => {
