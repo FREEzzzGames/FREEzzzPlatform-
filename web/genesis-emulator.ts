@@ -25,6 +25,11 @@ export class GenesisWebPlayer {
 
   getState(): GenesisPlayerState { return this.state; }
 
+  sendInput(key: string, action: "keydown" | "keyup"): void {
+    if (!this.iframe?.contentWindow) return;
+    this.iframe.contentWindow.postMessage({ type: "freezzz-gamepad-key", key, action }, "*");
+  }
+
   async mount(container: HTMLElement, file: File, language = "ru-RU"): Promise<void> {
     this.stop();
     if (!file.name.toLowerCase().match(/\.(md|gen|bin|smd|mdx)$/)) {
