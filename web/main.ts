@@ -67,15 +67,13 @@ let midiError = "";
 let midiOctave = 4;
 let midiActiveNotes = new Set<number>();
 let midiPadBank = 0;
-type LiveSourceKind = "twitch" | "youtube" | "external";
+type LiveSourceKind = "twitch" | "youtube";
 interface LiveSource { readonly id: string; readonly label: string; readonly kind: LiveSourceKind; readonly url: string; readonly channel?: string; }
 interface LiveCreator { readonly id: string; readonly name: string; readonly region: string; readonly categories: readonly string[]; readonly sources: readonly LiveSource[]; }
 
 const liveCreators: readonly LiveCreator[] = [
   { id: "leb1ga", name: "Leb1ga", region: "🇺🇦 Украина", categories: ["Just Chatting"], sources: [
-    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/leb1ga", channel: "leb1ga" },
-    { id: "telegram", label: "Telegram", kind: "external", url: "https://t.me/lebigaa" },
-    { id: "instagram", label: "Instagram", kind: "external", url: "https://instagram.com/nonstop.energy" }
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/leb1ga", channel: "leb1ga" }
   ]},
   { id: "dendi", name: "Dendi", region: "🇺🇦 Украина", categories: ["Dota 2"], sources: [
     { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/dendi", channel: "dendi" }
@@ -85,31 +83,22 @@ const liveCreators: readonly LiveCreator[] = [
   ]},
   { id: "papaplatte", name: "Papaplatte", region: "🇩🇪 Германия", categories: ["Variety", "Minecraft"], sources: [
     { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/papaplatte", channel: "papaplatte" },
-    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/papaplatte", channel: "UCDmbhGe7-wC1a55l5ZYAZJw" },
-    { id: "instagram", label: "Instagram", kind: "external", url: "https://instagram.com/papaplatte" },
-    { id: "tiktok", label: "TikTok", kind: "external", url: "https://tiktok.com/papaplatte" }
+    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/papaplatte", channel: "UCDmbhGe7-wC1a55l5ZYAZJw" }
   ]},
   { id: "montanablack88", name: "MontanaBlack88", region: "🇩🇪 Германия", categories: ["Variety"], sources: [
     { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/montanablack88", channel: "montanablack88" },
-    { id: "youtube", label: "YouTube", kind: "external", url: "https://youtube.com/montanablack88" },
-    { id: "instagram", label: "Instagram", kind: "external", url: "https://instagram.com/montanablack" },
-    { id: "tiktok", label: "TikTok", kind: "external", url: "https://tiktok.com/montanablack" }
+    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/montanablack88" }
   ]},
   { id: "trymacs", name: "Trymacs", region: "🇩🇪 Германия", categories: ["Variety", "Gaming"], sources: [
     { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/trymacs", channel: "trymacs" },
-    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/Trymacs", channel: "UC6Gc4KQ1ueDnh8x7plaAD3w" },
-    { id: "instagram", label: "Instagram", kind: "external", url: "https://instagram.com/trymacs" },
-    { id: "tiktok", label: "TikTok", kind: "external", url: "https://tiktok.com/@trymacs" }
+    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/Trymacs", channel: "UC6Gc4KQ1ueDnh8x7plaAD3w" }
   ]},
   { id: "smetanduck", name: "smetanduck", region: "🎮 Mobile Legends: Bang Bang", categories: ["Mobile Legends"], sources: [
     { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/smetanduck", channel: "smetanduck" },
-    { id: "youtube", label: "YouTube", kind: "external", url: "https://youtube.com/@smetanaml" },
-    { id: "tiktok", label: "TikTok", kind: "external", url: "https://tiktok.com/@smetana780" },
-    { id: "discord", label: "Discord", kind: "external", url: "https://discord.gg/T9jftcSC" }
+    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/@smetanaml" }
   ]},
   { id: "titamin1", name: "titamin1", region: "🎮 Mobile Legends: Bang Bang", categories: ["Mobile Legends"], sources: [
-    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/titamin1", channel: "titamin1" },
-    { id: "boosty", label: "Boosty", kind: "external", url: "https://boosty.to/titamin" }
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/titamin1", channel: "titamin1" }
   ]},
   { id: "dunkelsch4tten", name: "Dunkelsch4tten", region: "🎮 Mobile Legends: Bang Bang", categories: ["Mobile Legends"], sources: [
     { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/dunkelsch4tten", channel: "dunkelsch4tten" }
@@ -118,7 +107,7 @@ const liveCreators: readonly LiveCreator[] = [
     { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/buster", channel: "buster" }
   ]},
   { id: "marmok", name: "Marmok", region: "😂 Юмор", categories: ["YouTube", "Gaming"], sources: [
-    { id: "youtube", label: "YouTube", kind: "external", url: "https://youtube.com/@Marmok" }
+    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/@Marmok" }
   ]},
   { id: "zubarefff", name: "Zubarefff (Зубарев)", region: "😂 Юмор", categories: ["Entertainment"], sources: [
     { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/zubareff", channel: "zubareff" }
@@ -248,7 +237,7 @@ function view(current: PlatformWorkspaceView): string {
       <div class="live-feature">
         <div class="live-feature-head">
           <div class="live-creator-title"><div class="live-avatar">${escapeHtml(selected.name.slice(0, 2).toUpperCase())}</div><div><strong>${escapeHtml(selected.name)}</strong><span>${escapeHtml(selected.region)} · ${escapeHtml(selected.categories.join(" · "))}</span></div></div>
-          <a class="live-open" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">Открыть источник</a>
+          <a class="live-open" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">Открыть ${escapeHtml(source.label)}</a>
         </div>
         <div class="live-source-tabs">${selected.sources.map(item => `<button class="live-source ${item.id === source.id ? "active" : ""}" data-live-source="${escapeHtml(item.id)}" type="button">${escapeHtml(item.label)}${liveEmbedUrl(item) ? " · ▶" : ""}</button>`).join("")}</div>
         <div class="live-player-shell">${embedUrl ? `<iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(selected.name)} — ${escapeHtml(source.label)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>` : `<div class="live-placeholder"><strong>Этот источник не предоставляет универсальный встроенный live-player.</strong><span>Источник выбран правильно — открой его напрямую кнопкой выше.</span></div>`}</div>
