@@ -256,19 +256,19 @@ function liveEmbedUrl(creatorId: string, source: LiveSource): string | undefined
   const status = livePlaybackStatus.sources?.[liveStatusKey(creatorId, source.id)];
   if (source.kind === "youtube" && source.videoId) {
     return "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(source.videoId) + "?" +
-      new URLSearchParams({ autoplay: "0", rel: "0", playsinline: "1" }).toString();
+      new URLSearchParams({ autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString();
   }
   if (source.kind === "youtube" && source.youtubeHandle) {
     return "https://www.youtube-nocookie.com/embed?" +
-      new URLSearchParams({ listType: "user_uploads", list: source.youtubeHandle, autoplay: "0", rel: "0", playsinline: "1" }).toString();
+      new URLSearchParams({ listType: "user_uploads", list: source.youtubeHandle, autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString();
   }
   if (status && !status.online && status.fallbackVideoId) {
     if (source.kind === "twitch") {
       const parent = window.location.hostname || "freezzgames.github.io";
-      return `https://player.twitch.tv/?${new URLSearchParams({ video: `v${status.fallbackVideoId}`, parent, autoplay: "false", muted: "false" }).toString()}`;
+      return `https://player.twitch.tv/?${new URLSearchParams({ video: `v${status.fallbackVideoId}`, parent, autoplay: "true", muted: "true" }).toString()}`;
     }
     if (source.kind === "youtube") {
-      return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(status.fallbackVideoId)}?${new URLSearchParams({ autoplay: "0", rel: "0", playsinline: "1" }).toString()}`;
+      return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(status.fallbackVideoId)}?${new URLSearchParams({ autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString()}`;
     }
   }
   if (source.kind === "twitch" && source.channel) {
@@ -420,8 +420,6 @@ function renderGlobalLivePlayer(): void {
   }
 
   const embedUrl = liveEmbedUrl(creator.id, source);
-  const state = livePlaybackStatus.sources?.[liveStatusKey(creator.id, source.id)];
-
   if (!globalLiveHost) {
     globalLiveHost = document.createElement("section");
     globalLiveHost.id = "global-live-player";
