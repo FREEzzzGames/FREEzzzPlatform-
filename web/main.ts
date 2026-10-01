@@ -204,7 +204,6 @@ function openLiveAddModal(): void {
     '<div class="live-add-head"><div><span class="muted">LIVE / STREAM PICKER</span><h3 id="live-add-title">Добавить стримера</h3><p>Выбери блогера и сразу добавь его стрим на экран.</p></div><button id="live-add-close" class="live-add-close" type="button" aria-label="Закрыть">×</button></div>' +
     '<div class="live-streamer-list">' +
     creators.map(creator => {
-      const primary = creator.sources[0];
       const activeCount = livePopups.filter(popup => popup.creatorId === creator.id).length;
       return '<article class="live-streamer-row">' +
         '<div class="live-streamer-avatar">' + escapeHtml(creator.name.slice(0, 2).toUpperCase()) + '</div>' +
