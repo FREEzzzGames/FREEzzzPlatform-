@@ -376,3 +376,13 @@ body:not([data-platform-view="radio"]) footer .muted{
     flex-basis:42%;
   }
 }
+
+/* MIDI asset library */
+.midi-asset-library{margin-top:14px;padding:12px;border:1px solid #29313d;border-radius:12px;background:#0f151d}
+.midi-assets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.midi-asset{min-width:0;text-align:left;border:1px solid #303b4a;border-radius:10px;background:#151c26;color:#c1c9d5;padding:11px;cursor:pointer;display:flex;flex-direction:column;gap:5px}
+.midi-asset strong{color:#eef2f8;font-size:12px}
+.midi-asset span,.midi-asset small{color:#7f8999;font-size:10px}
+.midi-asset.active{border-color:#7d91aa;background:#202b39}
+.midi-asset.active small{color:#cbd5e2}
+@media(max-width:760px){.midi-assets{grid-template-columns:1fr}}
