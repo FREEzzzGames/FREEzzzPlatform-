@@ -17,7 +17,7 @@ jobs:
           node-version: 22
           cache: npm
       - name: Build web runtime
-        run: npm ci && npm run build
+        run: npm install && npm run build
       - name: Copy web runtime into Android assets
         run: mkdir -p android/app/src/main/assets && cp -R dist/. android/app/src/main/assets/
       - name: Setup Java
