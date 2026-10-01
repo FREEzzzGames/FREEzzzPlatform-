@@ -90,14 +90,6 @@ class MainActivity : Activity() {
                     super.onPageFinished(view, url)
                 }
 
-                override fun onReceivedError(view: WebView, request: WebResourceRequest, error: android.webkit.WebResourceError) {
-                    if (request.isForMainFrame) {
-                        pageLoaded = false
-                        android.util.Log.e(LOG_TAG, "Main frame load failed: " + error.errorCode + " " + error.description)
-                    }
-                    super.onReceivedError(view, request, error)
-                }
-
                 override fun onRenderProcessGone(view: WebView, detail: android.webkit.RenderProcessGoneDetail): Boolean {
                     android.util.Log.e(LOG_TAG, "WebView renderer exited; recreating WebView")
                     recreateWebView()
