@@ -76,25 +76,18 @@ jobs:
                   key: process.env.YOUTUBE_API_KEY
                 });
                 const live = await json(liveUrl);
-                const activityUrl = new URL("https://www.googleapis.com/youtube/v3/activities");
-                activityUrl.search = new URLSearchParams({
-                  part: "snippet,contentDetails",
+                const completedUrl = new URL("https://www.googleapis.com/youtube/v3/search");
+                completedUrl.search = new URLSearchParams({
+                  part: "snippet",
                   channelId,
-                  maxResults: "10",
+                  eventType: "completed",
+                  type: "video",
+                  order: "date",
+                  maxResults: "1",
                   key: process.env.YOUTUBE_API_KEY
                 });
-                const activity = await json(activityUrl);
-                const uploadIds = (activity.items || [])
-                  .filter(item => item?.snippet?.type === "upload" && item?.contentDetails?.upload?.videoId)
-                  .map(item => item.contentDetails.upload.videoId);
-                let latestLiveVideoId;
-                if (uploadIds.length) {
-                  const videosUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
-                  videosUrl.search = new URLSearchParams({
-                    part: "id,liveStreamingDetails",
-                    id: uploadIds.join(","),
-                    key: process.env.YOUTUBE_API_KEY
-                  });
+                const completed = await json(completedUrl);
+                const latestLiveVideoId = completed.items?.[0]?.id?.videoId;);
                   const videos = await json(videosUrl);
                   latestLiveVideoId = videos.items?.find(video => video?.liveStreamingDetails?.actualStartTime)?.id;
                 }
