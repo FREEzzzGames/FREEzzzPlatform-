@@ -5,11 +5,11 @@ const root = process.cwd();
 const requiredFiles = [
   ".github/workflows/ci.yml",
   ".github/workflows/pages.yml",
-  ".github/workflows/live-status.yml",
   ".github/workflows/integration-smoke.yml",
   "web/index.html",
   "web/main.ts",
   "web/live-status.json",
+  "scripts/refresh-live-status.mjs",
   "telegram-integration/telegram-integration.ts",
   "telegram-integration/webapp-adapter.ts",
   "web/chat-sync.ts"
@@ -29,7 +29,9 @@ for (const file of requiredFiles) {
 if (failures.length === 0) {
   requireMatch(".github/workflows/ci.yml", /npm run verify:integration/, "integration verifier in CI");
   requireMatch(".github/workflows/pages.yml", /npm run verify:integration/, "integration verifier in Pages build");
-  requireMatch(".github/workflows/live-status.yml", /web\/live-status\.json/, "LIVE cache path");
+  requireMatch(".github/workflows/pages.yml", /npm run refresh:live/, "LIVE refresh in release pipeline");
+  requireMatch("package.json", /"refresh:live"/, "LIVE refresh command");
+  requireMatch("scripts/refresh-live-status.mjs", /web\/live-status\.json/, "LIVE cache path");
   requireMatch("web/index.html", /telegram\.org\/js\/telegram-web-app\.js/, "Telegram WebApp SDK");
   requireMatch("web/index.html", /src="\.\/main\.ts"/, "Web application entrypoint");
   requireMatch("web/main.ts", /Telegram\?\.WebApp/, "Telegram WebApp detection");
