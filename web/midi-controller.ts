@@ -1,3 +1,5 @@
+import { MIDI_SOUND_PRESETS, type MidiSoundPreset } from "./midi-presets";
+
 export type MidiOutputInfo = { id: string; name: string; manufacturer?: string };
 export type MidiInputInfo = { id: string; name: string; manufacturer?: string };
 
@@ -20,6 +22,7 @@ export class WebMidiController {
   private input: MIDIInput | null = null;
   private channel = 0;
   private octave = 4;
+  private preset: MidiSoundPreset = MIDI_SOUND_PRESETS[0];
   private audioContext: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private compressor: DynamicsCompressorNode | null = null;
@@ -174,6 +177,49 @@ export class WebMidiController {
     return this.octave;
   }
 
+  getPreset(): MidiSoundPreset {
+    return this.preset;
+  }
+
+  setPreset(id: string): void {
+    const preset = MIDI_SOUND_PRESETS.find(item => item.id === id);
+    if (!preset) throw new Error("MIDI preset not found.");
+    this.preset = preset;
+    for (const voice of this.activeVoices.values()) {
+      voice.filter.frequency.setTargetAtTime(preset.filter, this.audioContext?.currentTime ?? 0, 0.02);
+      voice.filter.Q.setTargetAtTime(preset.resonance, this.audioContext?.currentTime ?? 0, 0.02);
+      voice.oscillator.detune.setTargetAtTime(preset.detune, this.audioContext?.currentTime ?? 0, 0.02);
+    }
+  }
+
+  playUiSound(kind: "click" | "select" | "confirm" | "back" | "error" | "pad"): void {
+    this.ensureAudio();
+    const context = this.audioContext;
+    const master = this.masterGain;
+    if (!context || !master || !this.isAudioEnabled()) return;
+    const now = context.currentTime;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const settings = {
+      click: { start: 420, end: 210, duration: .045, wave: "square" as OscillatorType },
+      select: { start: 560, end: 760, duration: .07, wave: "triangle" as OscillatorType },
+      confirm: { start: 520, end: 1040, duration: .13, wave: "sine" as OscillatorType },
+      back: { start: 360, end: 180, duration: .09, wave: "triangle" as OscillatorType },
+      error: { start: 180, end: 110, duration: .11, wave: "sawtooth" as OscillatorType },
+      pad: { start: 90, end: 55, duration: .08, wave: "square" as OscillatorType }
+    }[kind];
+    oscillator.type = settings.wave;
+    oscillator.frequency.setValueAtTime(settings.start, now);
+    oscillator.frequency.exponentialRampToValueAtTime(Math.max(30, settings.end), now + settings.duration);
+    gain.gain.setValueAtTime(.0001, now);
+    gain.gain.exponentialRampToValueAtTime(.045, now + .004);
+    gain.gain.exponentialRampToValueAtTime(.0001, now + settings.duration);
+    oscillator.connect(gain);
+    gain.connect(master);
+    oscillator.start(now);
+    oscillator.stop(now + settings.duration + .01);
+  }
+
   getCC(controller: number): number {
     return this.ccValues.get(controller) ?? 64;
   }
@@ -244,13 +290,14 @@ export class WebMidiController {
     const filter = context.createBiquadFilter();
     const gain = context.createGain();
 
-    oscillator.type = "sawtooth";
+    oscillator.type = this.preset.wave;
     oscillator.frequency.value = 440 * Math.pow(2, (note - 69) / 12);
+    oscillator.detune.value = this.preset.detune;
     filter.type = "lowpass";
-    filter.frequency.value = 180 + (this.getCC(21) / 127) * 7600;
-    filter.Q.value = 0.5 + (this.getCC(22) / 127) * 12;
+    filter.frequency.value = Math.max(120, Math.min(9000, this.preset.filter + (this.getCC(21) - 64) * 55));
+    filter.Q.value = Math.max(0.4, this.preset.resonance + (this.getCC(22) - 64) / 18);
 
-    const attack = 0.008 + (this.getCC(23) / 127) * 0.35;
+    const attack = Math.max(0.002, this.preset.attack + (this.getCC(23) / 127) * 0.08);
     const peak = Math.max(0.001, (velocity / 127) * 0.22);
     const now = context.currentTime;
 
@@ -299,7 +346,7 @@ export class WebMidiController {
     if (!voice || !this.audioContext) return;
 
     const now = this.audioContext.currentTime;
-    const release = 0.03 + (this.getCC(24) / 127) * 0.45;
+    const release = Math.max(0.02, this.preset.release + (this.getCC(24) / 127) * 0.18);
 
     voice.gain.gain.cancelScheduledValues(now);
     voice.gain.gain.setValueAtTime(Math.max(0.0001, voice.gain.gain.value), now);
