@@ -17,6 +17,7 @@ import { TelegramWebAppAdapter } from "../telegram-integration/webapp-adapter";
 import { WebStorageAdapter } from "../storage/platform-storage";
 import { RadioBrowserClient, RADIO_GENRES, type RadioBrowserStation } from "./radio-browser";
 import { WebMidiController, midiNoteName } from "./midi-controller";
+import { frameAsciiArt, generateAsciiText, type AsciiStyle } from "../ascii-generator/ascii-generator";
 import "./styles.css";
 
 const shell = new PlatformShell();
@@ -175,6 +176,7 @@ function view(current: PlatformWorkspaceView): string {
 
 function bind(current: PlatformWorkspaceView): void {
   document.querySelectorAll<HTMLButtonElement>("[data-quick]").forEach(button => button.addEventListener("click", () => { workspace.navigate(button.dataset.quick as PlatformWorkspaceView); persistSession(); render(); }));
+  if (current === "home") bindAsciiGenerator();
   if (current === "library") {
     document.querySelectorAll<HTMLButtonElement>("[data-game-launch]").forEach(button => button.addEventListener("click", () => { try { gamePlayer.select(button.dataset.gameLaunch!); gamePlayer.launch(); persistSession(); startGameLoop(); render(); } catch (error) { workspace.reportError(error); render(); } }));
     document.querySelector("#game-save")?.addEventListener("click", () => { try { gamePlayer.save(); persistSession(); } catch (error) { workspace.reportError(error); } render(); });
@@ -286,6 +288,38 @@ function renderMidiOverlay(): void {
     button.addEventListener("pointerleave", release);
     button.addEventListener("pointercancel", release);
   });
+}
+
+function bindAsciiGenerator(): void {
+  const hero = document.querySelector(".hero.panel");
+  if (!hero || document.querySelector("#ascii-generator")) return;
+  const section = document.createElement("section");
+  section.id = "ascii-generator";
+  section.className = "panel ascii-generator";
+  section.innerHTML = '<div><span class="muted">ASCII ART LAB</span><h2>ASCII Generator</h2><p>Локальный генератор текстового ASCII-арта. Он работает независимо от CHAT, LIVE, RADIO и GAME.</p></div><div class="ascii-controls"><label>Text<input id="ascii-text" maxlength="40" value="FREEzzz" autocomplete="off"></label><label>Style<select id="ascii-style"><option value="block">Block</option><option value="slim">Slim</option><option value="dots">Dots</option><option value="box">Box</option></select></label><button id="ascii-generate" type="button">Generate</button><button id="ascii-copy" type="button">Copy</button></div><pre id="ascii-output" class="ascii-output" aria-live="polite"></pre>';
+  hero.insertAdjacentElement("afterend", section);
+  const textInput = section.querySelector<HTMLInputElement>("#ascii-text");
+  const styleInput = section.querySelector<HTMLSelectElement>("#ascii-style");
+  const output = section.querySelector<HTMLPreElement>("#ascii-output");
+  if (!textInput || !styleInput || !output) return;
+  const update = () => {
+    const art = generateAsciiText(textInput.value, styleInput.value as AsciiStyle);
+    output.textContent = art ? frameAsciiArt(art, "FREEzzz ASCII") : "Введите текст для генерации.";
+  };
+  section.querySelector("#ascii-generate")?.addEventListener("click", update);
+  textInput.addEventListener("input", update);
+  styleInput.addEventListener("change", update);
+  section.querySelector("#ascii-copy")?.addEventListener("click", async () => {
+    if (!output.textContent || output.textContent === "Введите текст для генерации.") return;
+    try {
+      await navigator.clipboard.writeText(output.textContent);
+      const button = section.querySelector<HTMLButtonElement>("#ascii-copy");
+      if (button) { button.textContent = "Copied"; window.setTimeout(() => { button.textContent = "Copy"; }, 900); }
+    } catch {
+      // Clipboard is optional; generation remains fully local.
+    }
+  });
+  update();
 }
 
 async function playRadioStation(stationId: string): Promise<void> {
