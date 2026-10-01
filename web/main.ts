@@ -12,6 +12,7 @@ import { GameContentRegistry, GameContentResolver, MemoryGameContentSource } fro
 import { GameRuntime } from "../game-runtime/game-runtime";
 import { WebGamePlayer } from "../web-game-player/web-game-player";
 import { GameLibraryProjection } from "../game-library/game-library";
+import { registerWebDemoGame } from "../game-bootstrap/game-bootstrap";
 import { TelegramIntegration } from "../telegram-integration/telegram-integration";
 import { TelegramWebAppAdapter } from "../telegram-integration/webapp-adapter";
 import { WebStorageAdapter } from "../storage/platform-storage";
@@ -34,8 +35,6 @@ chat.addConversation({ id: "general", participants: [{ id: "user", displayName: 
 if (chat.store.listMessages("general").length === 0) {
   chat.receive({ id: "welcome", conversationId: "general", senderId: "system", text: "CHAT adapter is online.", timestamp: Date.now() });
 }
-library.add({ id: "platform-demo", title: "Platform Demo", type: "game", version: "1.0.0", source: "content://demo" });
-
 live.registerChannel({ id: "demo-channel", name: "Demo Channel", streamIds: [] });
 live.registerStream({ id: "demo-stream", channelId: "demo-channel", title: "Demo stream", source: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", protocol: "progressive", isLive: false });
 
@@ -48,6 +47,7 @@ const mount = (() => {
 const contentSource = new MemoryGameContentSource();
 const contentRegistry = new GameContentRegistry();
 const gameCatalog = new GameCatalog();
+registerWebDemoGame(gameCatalog, contentRegistry, contentSource);
 const gamePlayer = new WebGamePlayer(gameCatalog, new GameRuntime({ content: new GameContentResolver(contentRegistry, contentSource) }));
 const radioBrowser = new RadioBrowserClient();
 let radioStations: readonly RadioBrowserStation[] = [];
