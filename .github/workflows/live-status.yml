@@ -127,8 +127,30 @@ jobs:
             }
           }
 
+          async function latestTwitchVod(login) {
+            try {
+              const html = await text(`https://www.twitch.tv/${encodeURIComponent(login)}/videos?filter=archives&sort=time`);
+              const ids = [...html.matchAll(/(?:\\/videos\\/|videoId["':]+\\s*["'])(\\d{6,})/g)].map(match => match[1]);
+              return ids[0];
+            } catch (error) {
+              console.error("Twitch public VOD fallback", login, error.message);
+              return undefined;
+            }
+          }
+
           async function refreshTwitch() {
-            if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) return;
+            if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) {
+              for (const [key, login] of twitchChannels) {
+                const fallbackVideoId = await latestTwitchVod(login);
+                sources[`${key}:twitch`] = {
+                  online: false,
+                  ...(fallbackVideoId ? { fallbackVideoId } : {}),
+                  checkedAt: now,
+                  mode: "public-vod-fallback"
+                };
+              }
+              return;
+            }
             try {
               const tokenResponse = await json("https://id.twitch.tv/oauth2/token", {
                 method: "POST",
