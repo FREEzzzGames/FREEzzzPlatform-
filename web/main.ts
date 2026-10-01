@@ -352,6 +352,8 @@ function renderMidiOverlay(): void {
     { cc: 11, label: "EXPRESSION", short: "EXP" }
   ];
 
+  const savedPreset = loadMidiPresetId();
+  if (midiController.getPreset().id !== savedPreset) midiController.setPreset(savedPreset);
   const audioState = midiController.getAudioState();
   const outputName = midiController.getOutput()?.name ?? "Virtual synth";
   const inputName = midiController.getInput()?.name ?? "No MIDI input";
@@ -457,7 +459,12 @@ function renderMidiOverlay(): void {
           <div class="midi-keys">
             ${notes.map(note => {
               const black = [1, 3, 6, 8, 10].includes(note % 12);
-              return `<button class="midi-key ${black ? "black" : "white"} ${midiActiveNotes.has(note) ? "active" : ""}" data-midi-note="${note}" type="button"><span>${midiNoteName(note)}</span></button>`;
+              const whiteNotes = notes.filter(item => ![1, 3, 6, 8, 10].includes(item % 12));
+              const whiteIndex = whiteNotes.filter(item => item < note).length;
+              const whiteWidth = 100 / whiteNotes.length;
+              const left = black ? whiteIndex * whiteWidth - whiteWidth * 0.325 : whiteIndex * whiteWidth;
+              const width = black ? whiteWidth * 0.65 : whiteWidth;
+              return `<button class="midi-key ${black ? "black" : "white"} ${midiActiveNotes.has(note) ? "active" : ""}" data-midi-note="${note}" style="left:${left}%;width:${width}%" type="button"><span>${midiNoteName(note)}</span></button>`;
             }).join("")}
           </div>
         </div>
