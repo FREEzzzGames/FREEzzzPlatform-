@@ -332,7 +332,7 @@ function renderMidiOverlay(): void {
   overlay.id = "midi-overlay";
   overlay.className = "midi-overlay";
 
-  const notes = Array.from({ length: 25 }, (_, index) => midiOctave * 12 + index);
+  const notes = Array.from({ length: 25 }, (_, index) => (midiOctave + 1) * 12 + index);
   const pads = Array.from({ length: 16 }, (_, index) => index);
   const controls = [
     { cc: 7, label: "MASTER", short: "VOL" },
