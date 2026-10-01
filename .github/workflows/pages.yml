@@ -35,6 +35,9 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Verify integration contract
+        run: npm run verify:integration
+
       - name: Build web portal
         run: npm run build
 
@@ -43,6 +46,7 @@ jobs:
           test -f dist/index.html
           test ! -f dist/README.md
           grep -q '<script type="module"' dist/index.html
+          grep -q 'telegram.org/js/telegram-web-app.js' dist/index.html
           touch dist/.nojekyll
 
       - name: Configure Pages
@@ -84,11 +88,11 @@ jobs:
           for attempt in $(seq 1 18); do
             code="$(curl -L -s -o /tmp/pages.html -w '%{http_code}' "$url" || true)"
             echo "Attempt $attempt: HTTP $code"
-            if [ "$code" = "200" ] && grep -q 'FREEzzz Platform' /tmp/pages.html; then
+            if [ "$code" = "200" ] && grep -q 'FREEzzz Platform' /tmp/pages.html && grep -q 'telegram.org/js/telegram-web-app.js' /tmp/pages.html; then
               exit 0
             fi
             sleep 10
           done
-          echo "GitHub Pages did not serve the portal at $url"
+          echo "GitHub Pages did not serve the connected portal at $url"
           cat /tmp/pages.html || true
           exit 1
