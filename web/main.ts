@@ -141,12 +141,12 @@ interface LivePlaybackStatusFile {
   readonly generatedAt?: string;
   readonly sources?: Readonly<Record<string, LivePlaybackEntry>>;
 }
-const MAX_LIVE_POPUPS = 4;
+const MAX_LIVE_POPUPS = 1;
 const LIVE_CUSTOM_STORAGE_KEY = "freezzz:live:custom-creators";
 let customLiveCreators: LiveCreator[] = loadCustomLiveCreators();
 let selectedLiveCreatorId = liveCreators[0].id;
 let selectedLiveSourceId = liveCreators[0].sources[0].id;
-let livePopups: LivePopup[] = [];
+let livePopup: LivePopup | undefined;
 let livePlaybackStatus: LivePlaybackStatusFile = { sources: {} };
 
 function allLiveCreators(): LiveCreator[] {
@@ -204,7 +204,7 @@ function openLiveAddModal(): void {
     '<div class="live-add-head"><div><span class="muted">LIVE / STREAM PICKER</span><h3 id="live-add-title">Добавить стримера</h3><p>Выбери блогера и сразу добавь его стрим на экран.</p></div><button id="live-add-close" class="live-add-close" type="button" aria-label="Закрыть">×</button></div>' +
     '<div class="live-streamer-list">' +
     creators.map(creator => {
-      const activeCount = livePopups.filter(popup => popup.creatorId === creator.id).length;
+      const activeCount = livePopup?.creatorId === creator.id ? 1 : 0;
       return '<article class="live-streamer-row">' +
         '<div class="live-streamer-avatar">' + escapeHtml(creator.name.slice(0, 2).toUpperCase()) + '</div>' +
         '<div class="live-streamer-info"><strong>' + escapeHtml(creator.name) + '</strong><span>' + escapeHtml(creator.region) + '</span><small>' + escapeHtml(creator.categories.join(" · ")) + '</small></div>' +
@@ -283,16 +283,14 @@ void loadLivePlaybackStatus();
 function openLivePopup(creatorId: string, sourceId: string): void {
   const source = liveSource(creatorId, sourceId);
   if (!source) return;
-  const existing = livePopups.find(popup => popup.creatorId === creatorId && popup.sourceId === sourceId);
-  if (existing) return;
-  if (livePopups.length >= MAX_LIVE_POPUPS) livePopups = livePopups.slice(1);
-  livePopups = [...livePopups, { id: `${creatorId}-${sourceId}-${Date.now()}`, creatorId, sourceId }];
+  livePopup = { id: `${creatorId}-${sourceId}-${Date.now()}`, creatorId, sourceId };
   selectedLiveCreatorId = creatorId;
   selectedLiveSourceId = sourceId;
   render();
 }
-function closeLivePopup(popupId: string): void {
-  livePopups = livePopups.filter(popup => popup.id !== popupId);
+function closeLivePopup(popupId?: string): void {
+  if (popupId && livePopup?.id !== popupId) return;
+  livePopup = undefined;
   render();
 }
 
@@ -385,13 +383,34 @@ try {
   workspace.reportError(error);
 }
 
+function livePlayerMarkup(): string {
+  if (!livePopup) return "";
+  const creator = allLiveCreators().find(item => item.id === livePopup?.creatorId);
+  const source = livePopup ? liveSource(livePopup.creatorId, livePopup.sourceId) : undefined;
+  if (!creator || !source) return "";
+  const embedUrl = liveEmbedUrl(creator.id, source);
+  const state = livePlaybackStatus.sources?.[liveStatusKey(creator.id, source.id)];
+  const playbackText = state?.online ? "ОНЛАЙН" : state?.fallbackVideoId ? "ПОСЛЕДНЯЯ ЗАПИСЬ" : "КАНАЛ";
+  return `<section class="global-live-player" aria-label="LIVE player">
+    <div class="global-live-player-head">
+      <div><strong>LIVE · ${escapeHtml(creator.name)}</strong><span>${escapeHtml(source.label)} · ${playbackText}</span></div>
+      <button id="global-live-close" type="button" aria-label="Закрыть LIVE player">×</button>
+    </div>
+    <div class="global-live-video">${embedUrl
+      ? `<iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(creator.name)} — ${escapeHtml(source.label)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`
+      : `<div class="global-live-fallback">Плеер временно недоступен.</div>`}
+    </div>
+  </section>`;
+}
+
 function render(): void {
   const state = workspace.getState();
   document.body.dataset.platformView = state.view;
   const diagnostics = host.getDiagnostics();
-  mount.innerHTML = `<main class="workspace"><div class="developer-ui-shell">${developerUiVisible ? `<header class="topbar"><div><span class="eyebrow">FREEzzz</span><h1>Platform</h1></div><span class="state state-${state.status}">${state.status.toUpperCase()}</span></header><nav class="nav">${views.map(viewName => `<button class="${state.view === viewName ? "active" : ""}" data-view="${viewName}" type="button">${labels[viewName]}</button>`).join("")}</nav>${state.lastError ? `<div class="error" role="alert"><span>${escapeHtml(state.lastError)}</span><button id="clear-error" type="button">Dismiss</button></div>` : ""}` : ""}${view(state.view)}${developerUiVisible ? `<footer class="developer-ui-shell"><span class="muted">Target ${diagnostics.manifest.target} · ${host.getStatus()}</span><div class="footer-actions"><button id="persist" type="button">Save session</button><button id="restart" type="button">Restart</button></div></footer>` : ""}</div><button id="developer-ui-toggle" class="developer-ui-toggle" type="button" aria-pressed="${developerUiVisible}" aria-label="${developerUiVisible ? "Скрыть интерфейс разработчика" : "Показать интерфейс разработчика"}">${developerUiVisible ? "DEV · ON" : "DEV · OFF"}</button></main>`;
+  mount.innerHTML = `<main class="workspace"><div class="developer-ui-shell">${developerUiVisible ? `<header class="topbar"><div><span class="eyebrow">FREEzzz</span><h1>Platform</h1></div><span class="state state-${state.status}">${state.status.toUpperCase()}</span></header><nav class="nav">${views.map(viewName => `<button class="${state.view === viewName ? "active" : ""}" data-view="${viewName}" type="button">${labels[viewName]}</button>`).join("")}</nav>${state.lastError ? `<div class="error" role="alert"><span>${escapeHtml(state.lastError)}</span><button id="clear-error" type="button">Dismiss</button></div>` : ""}` : ""}${livePlayerMarkup()}${view(state.view)}${developerUiVisible ? `<footer class="developer-ui-shell"><span class="muted">Target ${diagnostics.manifest.target} · ${host.getStatus()}</span><div class="footer-actions"><button id="persist" type="button">Save session</button><button id="restart" type="button">Restart</button></div></footer>` : ""}</div><button id="developer-ui-toggle" class="developer-ui-toggle" type="button" aria-pressed="${developerUiVisible}" aria-label="${developerUiVisible ? "Скрыть интерфейс разработчика" : "Показать интерфейс разработчика"}">${developerUiVisible ? "DEV · ON" : "DEV · OFF"}</button></main>`;
   document.querySelectorAll<HTMLButtonElement>("[data-view]").forEach(button => button.onclick = () => { workspace.navigate(button.dataset.view as PlatformWorkspaceView); persistSession(); render(); });
   document.querySelector("#clear-error")?.addEventListener("click", () => { workspace.clearError(); render(); });
+  document.querySelector("#global-live-close")?.addEventListener("click", () => closeLivePopup());
   document.querySelector("#persist")?.addEventListener("click", () => { persistSession(); render(); });
   document.querySelector("#developer-ui-toggle")?.addEventListener("click", toggleDeveloperUi);
   document.querySelector("#restart")?.addEventListener("click", () => { try { if (host.getStatus() === "ready") host.stop(); workspace.start(); } catch (error) { workspace.reportError(error); } render(); });
@@ -446,7 +465,7 @@ function view(current: PlatformWorkspaceView): string {
           <p>Онлайн-стрим открывается сразу. Если блогер офлайн, LIVE показывает последнюю доступную запись.</p>
         </div>
         <div class="live-title-actions">
-          <span class="live-count">${livePopups.length}/${MAX_LIVE_POPUPS} players</span>
+          <span class="live-count">${livePopup ? "1 player" : "No player"}</span>
           <button id="live-add-streamer" class="live-add-button" type="button">＋ Добавить стримера</button>
         </div>
       </div>
@@ -496,30 +515,7 @@ function view(current: PlatformWorkspaceView): string {
         }).join("")}
       </div>
 
-      ${livePopups.length ? `<div class="live-popup-layer" aria-label="LIVE players">
-        <div class="live-popup-grid">${livePopups.map(popup => {
-          const creator = allLiveCreators().find(item => item.id === popup.creatorId);
-          const popupSource = liveSource(popup.creatorId, popup.sourceId);
-          if (!creator || !popupSource) return "";
-          const embedUrl = liveEmbedUrl(popup.creatorId, popupSource);
-          const state = statusFor(popup.creatorId, popupSource);
-          const playbackText = state?.online ? "ОНЛАЙН" : state?.fallbackVideoId ? "ПОСЛЕДНЯЯ ЗАПИСЬ" : "КАНАЛ";
-          return `<article class="live-popup" data-live-popup="${escapeHtml(popup.id)}">
-            <div class="live-popup-head">
-              <div><strong>${escapeHtml(creator.name)} · ${escapeHtml(popupSource.label)}</strong><span class="live-popup-state ${stateClass(popup.creatorId, popupSource)}">${playbackText}</span></div>
-              <button class="live-popup-close" data-live-popup-close="${escapeHtml(popup.id)}" type="button" aria-label="Закрыть плеер">×</button>
-            </div>
-            <div class="live-popup-video">${embedUrl
-              ? `<iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(creator.name)} — ${escapeHtml(popupSource.label)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`
-              : `<div class="live-popup-fallback"><strong>Встроенный плеер пока недоступен.</strong><p>Можно открыть источник напрямую.</p><a href="${escapeHtml(popupSource.url)}" target="_blank" rel="noopener noreferrer">Открыть ${escapeHtml(popupSource.label)} ↗</a></div>`}
-            </div>
-            <div class="live-popup-actions">
-              <a href="${escapeHtml(popupSource.url)}" target="_blank" rel="noopener noreferrer">Открыть источник</a>
-              <button data-live-popup-close="${escapeHtml(popup.id)}" type="button">Закрыть</button>
-            </div>
-          </article>`;
-        }).join("")}</div>
-      </div>` : ""}
+
     </section>`;
   }
   const selectedStation = radioStations.find(station => station.stationuuid === radioSelectedId) ?? radioStations[0];
@@ -632,10 +628,6 @@ function bind(current: PlatformWorkspaceView): void {
       selectedLiveCreatorId = creator.id;
       selectedLiveSourceId = sourceId;
       openLivePopup(creator.id, sourceId);
-    }));
-
-    document.querySelectorAll<HTMLButtonElement>("[data-live-popup-close]").forEach(button => button.addEventListener("click", () => {
-      closeLivePopup(button.dataset.livePopupClose ?? "");
     }));
 
     document.querySelector("#live-add-streamer")?.addEventListener("click", openLiveAddModal);
