@@ -404,6 +404,24 @@ gameLibrary.sync();
 
 const views: readonly PlatformWorkspaceView[] = ["home", "library", "chat", "live", "radio", "system"];
 const labels: Record<PlatformWorkspaceView, string> = { home: "Home", library: "Game Test", chat: "Chat", live: "Live", radio: "Radio", system: "System" };
+const DEV_UI_STORAGE_KEY = "freezzz:developer-ui-visible";
+let developerUiVisible = loadDeveloperUiVisible();
+
+function loadDeveloperUiVisible(): boolean {
+  try {
+    return localStorage.getItem(DEV_UI_STORAGE_KEY) !== "hidden";
+  } catch {
+    return true;
+  }
+}
+function persistDeveloperUiVisible(): void {
+  try { localStorage.setItem(DEV_UI_STORAGE_KEY, developerUiVisible ? "visible" : "hidden"); } catch {}
+}
+function toggleDeveloperUi(): void {
+  developerUiVisible = !developerUiVisible;
+  persistDeveloperUiVisible();
+  render();
+}
 
 function persistSession(): void {
   platformSession.save({ workspace: workspace.snapshot(), selectedGameId: gamePlayer.getState().gameId });
@@ -424,10 +442,11 @@ function render(): void {
   const state = workspace.getState();
   document.body.dataset.platformView = state.view;
   const diagnostics = host.getDiagnostics();
-  mount.innerHTML = `<main class="workspace"><header class="topbar"><div><span class="eyebrow">FREEzzz</span><h1>Platform</h1></div><span class="state state-${state.status}">${state.status.toUpperCase()}</span></header><nav class="nav">${views.map(viewName => `<button class="${state.view === viewName ? "active" : ""}" data-view="${viewName}" type="button">${labels[viewName]}</button>`).join("")}</nav>${state.lastError ? `<div class="error" role="alert"><span>${escapeHtml(state.lastError)}</span><button id="clear-error" type="button">Dismiss</button></div>` : ""}${view(state.view)}<footer><span class="muted">Target ${diagnostics.manifest.target} · ${host.getStatus()}</span><div class="footer-actions"><button id="persist" type="button">Save session</button><button id="restart" type="button">Restart</button></div></footer></main>`;
+  mount.innerHTML = `<main class="workspace"><div class="developer-ui-shell ${developerUiVisible ? "" : "is-hidden"}">${developerUiVisible ? `<header class="topbar"><div><span class="eyebrow">FREEzzz</span><h1>Platform</h1></div><span class="state state-${state.status}">${state.status.toUpperCase()}</span></header><nav class="nav">${views.map(viewName => `<button class="${state.view === viewName ? "active" : ""}" data-view="${viewName}" type="button">${labels[viewName]}</button>`).join("")}</nav>${state.lastError ? `<div class="error" role="alert"><span>${escapeHtml(state.lastError)}</span><button id="clear-error" type="button">Dismiss</button></div>` : ""}` : ""}${view(state.view)}<footer class="developer-ui-shell ${developerUiVisible ? "" : "is-hidden"}">${developerUiVisible ? `<span class="muted">Target ${diagnostics.manifest.target} · ${host.getStatus()}</span><div class="footer-actions"><button id="persist" type="button">Save session</button><button id="restart" type="button">Restart</button></div>` : ""}</footer><button id="developer-ui-toggle" class="developer-ui-toggle" type="button" aria-pressed="${developerUiVisible}" aria-label="${developerUiVisible ? "Скрыть интерфейс разработчика" : "Показать интерфейс разработчика"}">${developerUiVisible ? "DEV · ON" : "DEV · OFF"}</button></main>`;
   document.querySelectorAll<HTMLButtonElement>("[data-view]").forEach(button => button.onclick = () => { workspace.navigate(button.dataset.view as PlatformWorkspaceView); persistSession(); render(); });
   document.querySelector("#clear-error")?.addEventListener("click", () => { workspace.clearError(); render(); });
   document.querySelector("#persist")?.addEventListener("click", () => { persistSession(); render(); });
+  document.querySelector("#developer-ui-toggle")?.addEventListener("click", toggleDeveloperUi);
   document.querySelector("#restart")?.addEventListener("click", () => { try { if (host.getStatus() === "ready") host.stop(); workspace.start(); } catch (error) { workspace.reportError(error); } render(); });
   bind(state.view);
 }
