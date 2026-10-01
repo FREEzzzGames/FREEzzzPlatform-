@@ -421,7 +421,6 @@ function renderGlobalLivePlayer(): void {
 
   const embedUrl = liveEmbedUrl(creator.id, source);
   const state = livePlaybackStatus.sources?.[liveStatusKey(creator.id, source.id)];
-  const playbackText = state?.online ? "ОНЛАЙН" : state?.fallbackVideoId ? "ПОСЛЕДНЯЯ ЗАПИСЬ" : "КАНАЛ";
 
   if (!globalLiveHost) {
     globalLiveHost = document.createElement("section");
