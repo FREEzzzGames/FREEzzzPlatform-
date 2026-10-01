@@ -78,7 +78,7 @@ const liveChannels = [
     platform: "YouTube"
   }
 ] as const;
-let selectedLiveChannelId = liveChannels[0].id;
+let selectedLiveChannelId: string = liveChannels[0].id;
 const gameLibrary = new GameLibraryProjection(gameCatalog, library);
 const platformStorageAdapter = new WebStorageAdapter("freezzz:platform:");
 const platformSession = new PlatformSessionPersistence(platformStorageAdapter);
