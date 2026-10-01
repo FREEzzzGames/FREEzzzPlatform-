@@ -22,6 +22,7 @@ import { MIDI_ASSET_CATALOG, loadMidiAssetCollection, toggleMidiAssetCollection,
 import { MIDI_SOUND_PRESETS, MIDI_UI_SOUND_CATALOG, loadMidiPresetId, saveMidiPresetId, loadMidiUiSoundId, saveMidiUiSoundId } from "./midi-presets";
 import { frameAsciiArt, generateAsciiText, type AsciiStyle } from "../ascii-generator/ascii-generator";
 import "./styles.css";
+import { TelegramChatSync, type PortalChatMessage } from "./chat-sync";
 
 const shell = new PlatformShell();
 const host = new PlatformHost({ id: "freezzz-web", name: "FREEzzz Web Host", version: "0.1.0", target: "web" }, shell);
@@ -96,6 +97,42 @@ const gameLibrary = new GameLibraryProjection(gameCatalog, library);
 const platformStorageAdapter = new WebStorageAdapter("freezzz:platform:");
 const platformSession = new PlatformSessionPersistence(platformStorageAdapter);
 const telegramIntegration = new TelegramIntegration();
+const CHAT_BRIDGE_URL = "https://freezzzplatform-chat.onrender.com";
+const chatSync = new TelegramChatSync(CHAT_BRIDGE_URL);
+let chatSyncStatus: "offline" | "connecting" | "online" | "error" = "offline";
+let chatSyncError = "";
+const chatSenderNames = new Map<string, string>();
+
+function ingestTelegramChatMessage(message: PortalChatMessage): void {
+  chatSenderNames.set(message.senderId, message.username || message.senderName);
+  if (chat.store.listMessages("general").some(item => item.id === message.id)) return;
+  chat.receive({ id: message.id, conversationId: "general", senderId: message.senderId, text: message.text, timestamp: message.timestamp });
+}
+
+function rebuildTelegramChat(messages: readonly PortalChatMessage[]): void {
+  chat.store.removeConversation("general");
+  chat.addConversation({ id: "general", participants: [{ id: "telegram", displayName: "Telegram" }] });
+  chatSenderNames.clear();
+  for (const message of messages) ingestTelegramChatMessage(message);
+}
+
+async function initializeChatSync(): Promise<void> {
+  chatSync.onStatus(status => { chatSyncStatus = status; if (status !== "error") chatSyncError = ""; if (workspace.getState().view === "chat") render(); });
+  chatSync.onMessage(message => { try { ingestTelegramChatMessage(message); } catch (error) { chatSyncError = error instanceof Error ? error.message : String(error); } if (workspace.getState().view === "chat") render(); });
+  chatSync.onMessageUpdated(message => { void chatSync.loadHistory(100).then(rebuildTelegramChat).then(() => { if (workspace.getState().view === "chat") render(); }).catch(error => { chatSyncError = error instanceof Error ? error.message : String(error); if (workspace.getState().view === "chat") render(); }); });
+  try {
+    const history = await chatSync.loadHistory(100);
+    if (history.length) rebuildTelegramChat(history);
+    else if (chat.store.listMessages("general").length === 0) chat.receive({ id: "welcome", conversationId: "general", senderId: "system", text: "CHAT bridge is waiting for Telegram.", timestamp: Date.now() });
+    chatSync.connect();
+    const config = await chatSync.getConfig();
+    if (!config.telegramConfigured) chatSyncError = "Telegram bot token is not configured on the CHAT bridge.";
+  } catch (error) {
+    chatSyncError = error instanceof Error ? error.message : String(error);
+    chatSyncStatus = "error";
+    chatSync.connect();
+  }
+}
 
 const telegramBridge = (globalThis as typeof globalThis & { Telegram?: { WebApp?: { initData?: string; initDataUnsafe?: Readonly<{ user?: { id: number; username?: string; first_name?: string; last_name?: string } }>; ready(): void; expand(): void; close(): void; sendData?(data: string): void } } }).Telegram?.WebApp;
 if (telegramBridge) {
@@ -148,7 +185,11 @@ function view(current: PlatformWorkspaceView): string {
     const state = gamePlayer.getState();
     return `<section class="panel game-test"><span class="muted">WEB GAME TEST</span><h2>Gameplay test</h2><p>Этот экран предназначен для быстрой проверки игрового runtime в браузере. Android APK для каждой итерации больше не нужен.</p><div class="game-test-layout"><div class="game-screen-wrap"><canvas id="game-canvas" width="256" height="240" aria-label="Game display"></canvas><div class="game-status"><span>Status: ${state.status}</span><span>Frames: ${state.frame}</span><span>Game: ${state.gameId ? escapeHtml(state.gameId) : "None"}</span></div></div><div class="game-test-controls"><h3>Games</h3>${games.length ? games.map(game => `<button class="game-select ${state.gameId === game.id ? "active" : ""}" data-game-launch="${escapeHtml(game.id)}" type="button"><strong>${escapeHtml(game.name)}</strong><span>${escapeHtml(game.emulatorId)} · ${escapeHtml(game.version)}</span></button>`).join("") : `<div class="game-empty">Игры пока не зарегистрированы в веб-каталоге.</div>`}<div class="actions"><button id="game-save" type="button">Save</button><button id="game-pause" type="button">Pause</button><button id="game-resume" type="button">Resume</button><button id="game-exit" type="button">Exit</button></div></div></div></section>`;
   }
-  if (current === "chat") return `<section class="panel"><span class="muted">CHAT</span><h2>General</h2><div class="chat-log">${chat.store.listMessages("general").map(message => `<div class="chat-message"><strong>${escapeHtml(message.senderId)}</strong><span>${escapeHtml(message.text)}</span><time>${new Date(message.timestamp).toLocaleTimeString()}</time></div>`).join("")}</div><form id="chat-form" class="inline-form"><input id="chat-input" maxlength="500" autocomplete="off" required placeholder="Message"><button type="submit">Send</button></form></section>`;
+  if (current === "chat") {
+    const statusLabel = chatSyncStatus === "online" ? "TELEGRAM LIVE" : chatSyncStatus === "connecting" ? "CONNECTING" : chatSyncStatus === "error" ? "BRIDGE ERROR" : "OFFLINE";
+    const messages = chat.store.listMessages("general");
+    return `<section class="panel chat-portal"><div class="chat-heading"><div><span class="muted">CHAT</span><h2>Telegram Chat</h2><p>Portal interface · synchronized with the Telegram group</p></div><div class="chat-connection ${chatSyncStatus}"><span></span>${statusLabel}</div></div>${chatSyncError ? `<div class="chat-error">${escapeHtml(chatSyncError)}<button id="chat-reconnect" type="button">Reconnect</button></div>` : ""}<div class="chat-log" id="chat-log">${messages.map(message => `<div class="chat-message ${message.senderId === "system" ? "system" : ""}"><strong>${escapeHtml(chatSenderNames.get(message.senderId) || message.senderId)}</strong><span>${escapeHtml(message.text)}</span><time>${new Date(message.timestamp).toLocaleTimeString()}</time></div>`).join("")}</div><form id="chat-form" class="inline-form"><input id="chat-input" maxlength="4096" autocomplete="off" required placeholder="Write a message to Telegram"><button type="submit">Send</button></form></section>`;
+  }
   if (current === "live") {
     const selected = liveChannels.find(channel => channel.id === selectedLiveChannelId) ?? liveChannels[0];
     return `<section class="panel live-portal">
@@ -243,7 +284,33 @@ function bind(current: PlatformWorkspaceView): void {
     document.querySelector("#game-exit")?.addEventListener("click", () => { gamePlayer.exit(); persistSession(); render(); });
     drawGameFrame();
   }
-  if (current === "chat") document.querySelector<HTMLFormElement>("#chat-form")?.addEventListener("submit", event => { event.preventDefault(); const input = document.querySelector<HTMLInputElement>("#chat-input"); if (!input?.value.trim()) return; chat.receive({ id: `m-${Date.now()}`, conversationId: "general", senderId: "user", text: input.value.trim(), timestamp: Date.now() }); persistSession(); render(); });
+  if (current === "chat") {
+    document.querySelector("#chat-reconnect")?.addEventListener("click", () => { chatSync.disconnect(); chatSync.connect(); });
+    document.querySelector<HTMLFormElement>("#chat-form")?.addEventListener("submit", async event => {
+      event.preventDefault();
+      const input = document.querySelector<HTMLInputElement>("#chat-input");
+      const text = input?.value.trim() || "";
+      if (!text) return;
+      const button = document.querySelector<HTMLButtonElement>("#chat-form button");
+      if (button) button.disabled = true;
+      try {
+        const message = await chatSync.send(text);
+        if (message) ingestTelegramChatMessage(message);
+        if (input) input.value = "";
+        persistSession();
+        render();
+      } catch (error) {
+        chatSyncError = error instanceof Error ? error.message : String(error);
+        chatSyncStatus = "error";
+        render();
+      } finally {
+        const currentButton = document.querySelector<HTMLButtonElement>("#chat-form button");
+        if (currentButton) currentButton.disabled = false;
+      }
+    });
+    const log = document.querySelector<HTMLElement>("#chat-log");
+    if (log) log.scrollTop = log.scrollHeight;
+  } persistSession(); render(); });
   if (current === "live") {
     document.querySelectorAll<HTMLButtonElement>("[data-live-channel]").forEach(button => button.addEventListener("click", () => {
       selectedLiveChannelId = button.dataset.liveChannel ?? liveChannels[0].id;
