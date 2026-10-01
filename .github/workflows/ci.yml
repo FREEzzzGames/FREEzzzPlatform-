@@ -27,5 +27,7 @@ jobs:
         run: npm run typecheck
       - name: Test
         run: npm test
+      - name: Verify integration contract
+        run: npm run verify:integration
       - name: Build
         run: npm run build
