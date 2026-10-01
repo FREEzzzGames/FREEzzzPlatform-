@@ -471,28 +471,105 @@ function view(current: PlatformWorkspaceView): string {
     const selected = selectedLiveCreator();
     const source = selectedLiveSource();
     const liveCatalog = allLiveCreators();
+
+    const statusFor = (creatorId: string, sourceItem: LiveSource): LivePlaybackEntry | undefined =>
+      livePlaybackStatus.sources?.[liveStatusKey(creatorId, sourceItem.id)];
+
+    const stateLabel = (creatorId: string, sourceItem: LiveSource): string => {
+      const state = statusFor(creatorId, sourceItem);
+      if (state?.online) return "● ONLINE";
+      if (state?.fallbackVideoId) return "▶ RECORDING";
+      if (state?.checkedAt) return "○ OFFLINE";
+      return "○ READY";
+    };
+
+    const stateClass = (creatorId: string, sourceItem: LiveSource): string => {
+      const state = statusFor(creatorId, sourceItem);
+      if (state?.online) return "online";
+      if (state?.fallbackVideoId) return "recording";
+      if (state?.checkedAt) return "offline";
+      return "ready";
+    };
+
     return `<section class="panel live-portal">
-      <div class="live-title-row"><div><span class="muted">LIVE</span><h2>Стримы</h2><p>Открывай источники во всплывающих окнах. Одновременно до 4 плееров.</p></div><div class="live-title-actions"><span class="live-count">${livePopups.length}/${MAX_LIVE_POPUPS} players</span><button id="live-add-streamer" class="live-add-button" type="button">＋ Добавить стримера</button></div></div>
+      <div class="live-title-row">
+        <div>
+          <span class="muted">LIVE</span>
+          <h2>Стримы</h2>
+          <p>Онлайн-стрим открывается сразу. Если блогер офлайн, LIVE показывает последнюю доступную запись.</p>
+        </div>
+        <div class="live-title-actions">
+          <span class="live-count">${livePopups.length}/${MAX_LIVE_POPUPS} players</span>
+          <button id="live-add-streamer" class="live-add-button" type="button">＋ Добавить стримера</button>
+        </div>
+      </div>
+
       <div class="live-feature">
         <div class="live-feature-head">
-          <div class="live-creator-title"><div class="live-avatar">${escapeHtml(selected.name.slice(0, 2).toUpperCase())}</div><div><strong>${escapeHtml(selected.name)}</strong><span>${escapeHtml(selected.region)} · ${escapeHtml(selected.categories.join(" · "))}</span></div></div>
-          <button class="live-open" data-live-open-creator="${escapeHtml(selected.id)}" data-live-open-source="${escapeHtml(source.id)}" type="button">Открыть ${escapeHtml(source.label)}</button>
+          <div class="live-creator-title">
+            <div class="live-avatar">${escapeHtml(selected.name.slice(0, 2).toUpperCase())}</div>
+            <div>
+              <strong>${escapeHtml(selected.name)}</strong>
+              <span>${escapeHtml(selected.region)} · ${escapeHtml(selected.categories.join(" · "))}</span>
+              <em class="live-state ${stateClass(selected.id, source)}">${stateLabel(selected.id, source)}</em>
+            </div>
+          </div>
+          <div class="live-feature-actions">
+            <button class="live-open" data-live-open-creator="${escapeHtml(selected.id)}" data-live-open-source="${escapeHtml(source.id)}" type="button">▶ Смотреть</button>
+            <a class="live-direct" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">Канал ↗</a>
+          </div>
         </div>
-        <div class="live-source-tabs">${selected.sources.map(item => `<button class="live-source" data-live-open-creator="${escapeHtml(selected.id)}" data-live-open-source="${escapeHtml(item.id)}" type="button">${escapeHtml(item.label)} · ▶</button>`).join("")}</div>
+        <div class="live-source-tabs">
+          ${selected.sources.map(item => `<button class="live-source ${item.id === source.id ? "active" : ""}" data-live-open-creator="${escapeHtml(selected.id)}" data-live-open-source="${escapeHtml(item.id)}" type="button"><span>${escapeHtml(item.label)}</span><small>${stateLabel(selected.id, item)}</small></button>`).join("")}
+        </div>
       </div>
-      <div class="live-catalog-head"><div><strong>Все блогеры</strong><span>Системные + добавленные тобой. Нажми источник, чтобы открыть окно.</span></div><span>${liveCatalog.length} всего</span></div>
-      <div class="live-catalog">${liveCatalog.map(creator => `<article class="live-card ${creator.id === selected.id ? "active" : ""}"><button class="live-card-select" data-live-creator="${escapeHtml(creator.id)}" type="button"><span class="live-avatar small">${escapeHtml(creator.name.slice(0, 2).toUpperCase())}</span><span class="live-card-main"><strong>${escapeHtml(creator.name)}</strong><span>${escapeHtml(creator.region)}</span><small>${escapeHtml(creator.categories.join(" · "))}</small></span><span class="live-source-count">${creator.custom ? "CUSTOM" : creator.sources.length + " src"}</span></button>${creator.custom ? '<button class="live-card-remove" data-live-remove="' + escapeHtml(creator.id) + '" type="button" aria-label="Удалить ' + escapeHtml(creator.name) + '">×</button>' : ""}</article>`).join("")}</div>
+
+      <div class="live-catalog-head">
+        <div><strong>Все блогеры</strong><span>Системные + добавленные тобой. Нажми карточку для выбора.</span></div>
+        <span>${liveCatalog.length} всего</span>
+      </div>
+
+      <div class="live-catalog">
+        ${liveCatalog.map(creator => {
+          const creatorSource = creator.sources[0];
+          return `<article class="live-card ${creator.id === selected.id ? "active" : ""}">
+            <button class="live-card-select" data-live-creator="${escapeHtml(creator.id)}" type="button">
+              <span class="live-avatar small">${escapeHtml(creator.name.slice(0, 2).toUpperCase())}</span>
+              <span class="live-card-main">
+                <strong>${escapeHtml(creator.name)}</strong>
+                <span>${escapeHtml(creator.region)}</span>
+                <small>${escapeHtml(creator.categories.join(" · "))}</small>
+                <em class="live-state ${stateClass(creator.id, creatorSource)}">${stateLabel(creator.id, creatorSource)}</em>
+              </span>
+              <span class="live-source-count">${creator.custom ? "CUSTOM" : creator.sources.length + " src"}</span>
+            </button>
+            <button class="live-card-watch" data-live-open-creator="${escapeHtml(creator.id)}" data-live-open-source="${escapeHtml(creatorSource.id)}" type="button" aria-label="Смотреть ${escapeHtml(creator.name)}">▶</button>
+            ${creator.custom ? '<button class="live-card-remove" data-live-remove="' + escapeHtml(creator.id) + '" type="button" aria-label="Удалить ' + escapeHtml(creator.name) + '">×</button>' : ""}
+          </article>`;
+        }).join("")}
+      </div>
+
       ${livePopups.length ? `<div class="live-popup-layer" aria-label="LIVE players">
         <div class="live-popup-grid">${livePopups.map(popup => {
           const creator = allLiveCreators().find(item => item.id === popup.creatorId);
           const popupSource = liveSource(popup.creatorId, popup.sourceId);
           if (!creator || !popupSource) return "";
           const embedUrl = liveEmbedUrl(popup.creatorId, popupSource);
+          const state = statusFor(popup.creatorId, popupSource);
+          const playbackText = state?.online ? "ОНЛАЙН" : state?.fallbackVideoId ? "ПОСЛЕДНЯЯ ЗАПИСЬ" : "КАНАЛ";
           return `<article class="live-popup" data-live-popup="${escapeHtml(popup.id)}">
-            <div class="live-popup-head"><strong>${escapeHtml(creator.name)} · ${escapeHtml(popupSource.label)}</strong><button class="live-popup-close" data-live-popup-close="${escapeHtml(popup.id)}" type="button" aria-label="Закрыть плеер">×</button></div>
+            <div class="live-popup-head">
+              <div><strong>${escapeHtml(creator.name)} · ${escapeHtml(popupSource.label)}</strong><span class="live-popup-state ${stateClass(popup.creatorId, popupSource)}">${playbackText}</span></div>
+              <button class="live-popup-close" data-live-popup-close="${escapeHtml(popup.id)}" type="button" aria-label="Закрыть плеер">×</button>
+            </div>
             <div class="live-popup-video">${embedUrl
               ? `<iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(creator.name)} — ${escapeHtml(popupSource.label)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`
-              : `<div class="live-popup-fallback"><strong>Встроенный плеер недоступен для этого источника.</strong><a href="${escapeHtml(popupSource.url)}" target="_blank" rel="noopener noreferrer">Открыть ${escapeHtml(popupSource.label)} напрямую</a></div>`}</div>
+              : `<div class="live-popup-fallback"><strong>Встроенный плеер пока недоступен.</strong><p>Можно открыть источник напрямую.</p><a href="${escapeHtml(popupSource.url)}" target="_blank" rel="noopener noreferrer">Открыть ${escapeHtml(popupSource.label)} ↗</a></div>`}
+            </div>
+            <div class="live-popup-actions">
+              <a href="${escapeHtml(popupSource.url)}" target="_blank" rel="noopener noreferrer">Открыть источник</a>
+              <button data-live-popup-close="${escapeHtml(popup.id)}" type="button">Закрыть</button>
+            </div>
           </article>`;
         }).join("")}</div>
       </div>` : ""}
@@ -592,29 +669,37 @@ function bind(current: PlatformWorkspaceView): void {
   }
   if (current === "live") {
     document.querySelectorAll<HTMLButtonElement>("[data-live-creator]").forEach(button => button.addEventListener("click", () => {
-      selectedLiveCreatorId = button.dataset.liveCreator ?? liveCreators[0].id;
-      selectedLiveSourceId = selectedLiveCreator().sources[0].id;
+      const creatorId = button.dataset.liveCreator;
+      const creator = creatorId ? allLiveCreators().find(item => item.id === creatorId) : undefined;
+      if (!creator) return;
+      selectedLiveCreatorId = creator.id;
+      selectedLiveSourceId = creator.sources[0].id;
       render();
     }));
-    document.querySelectorAll<HTMLButtonElement>("[data-live-open-source]").forEach(button => button.addEventListener("click", () => {
+
+    document.querySelectorAll<HTMLButtonElement>("[data-live-open-source],[data-live-open-creator]").forEach(button => button.addEventListener("click", () => {
       const creatorId = button.dataset.liveOpenCreator ?? selectedLiveCreatorId;
-      const sourceId = button.dataset.liveOpenSource ?? selectedLiveSource().id;
-      openLivePopup(creatorId, sourceId);
+      const creator = allLiveCreators().find(item => item.id === creatorId);
+      const sourceId = button.dataset.liveOpenSource ?? creator?.sources[0]?.id ?? selectedLiveSourceId;
+      if (!creator || !sourceId) return;
+      selectedLiveCreatorId = creator.id;
+      selectedLiveSourceId = sourceId;
+      openLivePopup(creator.id, sourceId);
     }));
+
     document.querySelectorAll<HTMLButtonElement>("[data-live-popup-close]").forEach(button => button.addEventListener("click", () => {
       closeLivePopup(button.dataset.livePopupClose ?? "");
     }));
+
     document.querySelector("#live-add-streamer")?.addEventListener("click", openLiveAddModal);
-    document.querySelectorAll<HTMLElement>("[data-live-remove]").forEach(element => {
+
+    document.querySelectorAll<HTMLButtonElement>("[data-live-remove]").forEach(button => {
       const remove = (event: Event) => {
         event.preventDefault();
         event.stopPropagation();
-        removeCustomLiveCreator(element.dataset.liveRemove ?? "");
+        removeCustomLiveCreator(button.dataset.liveRemove ?? "");
       };
-      element.addEventListener("click", remove);
-      element.addEventListener("keydown", event => {
-        if (event.key === "Enter" || event.key === " ") remove(event);
-      });
+      button.addEventListener("click", remove);
     });
   }
   if (current === "radio") {
