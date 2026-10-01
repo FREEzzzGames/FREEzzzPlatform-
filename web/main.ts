@@ -142,7 +142,7 @@ function view(current: PlatformWorkspaceView): string {
           <a class="live-open" href="${escapeHtml(selected.url)}" target="_blank" rel="noopener noreferrer">Открыть канал</a>
         </div>
         <div class="live-player-shell">
-          ${selected.embedUrl
+          ${("embedUrl" in selected && selected.embedUrl)
             ? `<iframe src="${escapeHtml(selected.embedUrl)}" title="${escapeHtml(selected.name)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`
             : `<div class="live-placeholder"><strong>Прямой встроенный плеер недоступен для этого канала</strong><span>Открой канал по кнопке выше.</span></div>`}
         </div>
