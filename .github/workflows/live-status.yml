@@ -87,10 +87,7 @@ jobs:
                   key: process.env.YOUTUBE_API_KEY
                 });
                 const completed = await json(completedUrl);
-                const latestLiveVideoId = completed.items?.[0]?.id?.videoId;);
-                  const videos = await json(videosUrl);
-                  latestLiveVideoId = videos.items?.find(video => video?.liveStreamingDetails?.actualStartTime)?.id;
-                }
+                const latestLiveVideoId = completed.items?.[0]?.id?.videoId;
                 const liveItem = live.items?.[0];
                 sources[key] = {
                   online: Boolean(liveItem?.id?.videoId),
