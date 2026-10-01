@@ -25,10 +25,11 @@ jobs:
           const fs = require("fs");
 
           const youtubeChannels = {
-            "papaplatte:youtube": "UCDmbhGe7-wC1a55l5ZYAZJw",
-            "montanablack88:youtube": "UCpAMOlA_0hFXopIxMq8ar0w",
-            "trymacs:youtube": "UC6Gc4KQ1ueDnh8x7plaAD3w",
-            "marmok:youtube": "UCkxpiTIU50N3_dNt4WMMZyw"
+            "papaplatte:youtube": { id: "UCDmbhGe7-wC1a55l5ZYAZJw" },
+            "montanablack88:youtube": { id: "UCpAMOlA_0hFXopIxMq8ar0w" },
+            "trymacs:youtube": { id: "UC6Gc4KQ1ueDnh8x7plaAD3w" },
+            "marmok:youtube": { id: "UCkxpiTIU50N3_dNt4WMMZyw" },
+            "smetanduck:youtube": { handle: "@smetanaml" }
           };
 
           const twitchChannels = [
@@ -39,7 +40,8 @@ jobs:
             ["buster", "buster"], ["zubarefff", "zubareff"]
           ];
 
-          const sources = {};
+          const existing = JSON.parse(fs.readFileSync("web/live-status.json", "utf8"));
+          const sources = { ...(existing.sources || {}) };
           const now = new Date().toISOString();
 
           async function json(url, options = {}) {
@@ -50,8 +52,20 @@ jobs:
 
           async function refreshYoutube() {
             if (!process.env.YOUTUBE_API_KEY) return;
-            for (const [key, channelId] of Object.entries(youtubeChannels)) {
+            for (const [key, channel] of Object.entries(youtubeChannels)) {
               try {
+                let channelId = channel.id;
+                if (!channelId && channel.handle) {
+                  const channelUrl = new URL("https://www.googleapis.com/youtube/v3/channels");
+                  channelUrl.search = new URLSearchParams({
+                    part: "id",
+                    forHandle: channel.handle,
+                    key: process.env.YOUTUBE_API_KEY
+                  });
+                  const channelResponse = await json(channelUrl);
+                  channelId = channelResponse.items?.[0]?.id;
+                }
+                if (!channelId) continue;
                 const liveUrl = new URL("https://www.googleapis.com/youtube/v3/search");
                 liveUrl.search = new URLSearchParams({
                   part: "snippet",
@@ -100,19 +114,24 @@ jobs:
                 "Authorization": `Bearer ${tokenResponse.access_token}`,
                 "Client-Id": process.env.TWITCH_CLIENT_ID
               };
+              const usersUrl = new URL("https://api.twitch.tv/helix/users");
+              for (const [, login] of twitchChannels) usersUrl.searchParams.append("login", login);
+              const users = await json(usersUrl, { headers });
+              const userIds = new Map((users.data || []).map(user => [user.login.toLowerCase(), user.id]));
               const streamUrl = new URL("https://api.twitch.tv/helix/streams");
               for (const [, login] of twitchChannels) streamUrl.searchParams.append("user_login", login);
               const streams = await json(streamUrl, { headers });
               const online = new Map((streams.data || []).map(stream => [stream.user_login.toLowerCase(), stream]));
               for (const [key, login] of twitchChannels) {
                 const stream = online.get(login.toLowerCase());
+                const userId = stream?.user_id || userIds.get(login.toLowerCase());
                 let fallbackVideoId;
                 try {
-                  const vodUrl = new URL("https://api.twitch.tv/helix/videos");
-                  vodUrl.searchParams.set("user_id", stream?.user_id || "");
-                  vodUrl.searchParams.set("type", "archive");
-                  vodUrl.searchParams.set("first", "1");
-                  if (stream?.user_id) {
+                  if (userId) {
+                    const vodUrl = new URL("https://api.twitch.tv/helix/videos");
+                    vodUrl.searchParams.set("user_id", userId);
+                    vodUrl.searchParams.set("type", "archive");
+                    vodUrl.searchParams.set("first", "1");
                     const vods = await json(vodUrl, { headers });
                     fallbackVideoId = vods.data?.[0]?.id;
                   }
