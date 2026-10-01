@@ -35,6 +35,7 @@ export class VirtualGamepad {
   private pressed = new Set<string>();
   constructor(private readonly profile: VirtualConsoleType, private readonly send:(key:string,type:"keydown"|"keyup")=>void) {}
   mount(container:HTMLElement):void {
+    this.destroy();
     const p=CONTROLLER_PROFILES[this.profile];
     container.innerHTML=`<div class="virtual-gamepad" data-console="${this.profile}" aria-label="${p.name}"><div class="gamepad-title">${p.name}</div><div class="gamepad-body"><div class="gamepad-dpad"><button class="gamepad-button dpad-up" data-key="ArrowUp">▲</button><button class="gamepad-button dpad-left" data-key="ArrowLeft">◀</button><button class="gamepad-button dpad-right" data-key="ArrowRight">▶</button><button class="gamepad-button dpad-down" data-key="ArrowDown">▼</button></div><div class="gamepad-special">${p.buttons.filter(b=>["select","start","mode"].includes(b.id)).map(b=>`<button class="gamepad-button ${b.className}" data-key="${b.key}">${b.label}</button>`).join("")}</div><div class="gamepad-face">${p.buttons.filter(b=>["a","b","c","x","y","z"].includes(b.id)).map(b=>`<button class="gamepad-button ${b.className}" data-key="${b.key}">${b.label}</button>`).join("")}</div></div></div>`;
     container.querySelectorAll<HTMLButtonElement>(".gamepad-button").forEach(btn=>{
