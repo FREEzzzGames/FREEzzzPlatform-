@@ -34,10 +34,7 @@ let liveElement: HTMLVideoElement | undefined;
 installWebModuleAdapters(chat, live, radio, library, element => { liveElement = element; });
 library.useStorage("web-library");
 
-chat.addConversation({ id: "general", participants: [{ id: "user", displayName: "User" }, { id: "system", displayName: "System" }] });
-if (chat.store.listMessages("general").length === 0) {
-  chat.receive({ id: "welcome", conversationId: "general", senderId: "system", text: "CHAT adapter is online.", timestamp: Date.now() });
-}
+chat.addConversation({ id: "general", participants: [{ id: "telegram", displayName: "Telegram" }] });
 live.registerChannel({ id: "demo-channel", name: "Demo Channel", streamIds: [] });
 live.registerStream({ id: "demo-stream", channelId: "demo-channel", title: "Demo stream", source: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", protocol: "progressive", isLive: false });
 
