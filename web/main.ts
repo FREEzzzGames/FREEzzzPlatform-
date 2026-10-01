@@ -15,8 +15,6 @@ import { GameLibraryProjection } from "../game-library/game-library";
 import { TelegramIntegration } from "../telegram-integration/telegram-integration";
 import { TelegramWebAppAdapter } from "../telegram-integration/webapp-adapter";
 import { WebStorageAdapter } from "../storage/platform-storage";
-import { GenesisWebPlayer } from "./genesis-emulator";
-import { VirtualGamepad } from "./virtual-gamepad";
 import { RadioBrowserClient, RADIO_GENRES, type RadioBrowserStation } from "./radio-browser";
 import "./styles.css";
 
@@ -54,7 +52,6 @@ contentRegistry.register({ gameId: "platform-demo-game", version: "1.0.0", emula
 const gameCatalog = new GameCatalog();
 gameCatalog.register({ id: "platform-demo-game", name: "Platform Demo", version: "1.0.0", emulatorId: "nes", content: contentRegistry.get("platform-demo-game")! });
 const gamePlayer = new WebGamePlayer(gameCatalog, new GameRuntime({ content: new GameContentResolver(contentRegistry, contentSource) }));
-const genesisPlayer = new GenesisWebPlayer();
 const radioBrowser = new RadioBrowserClient();
 let radioStations: readonly RadioBrowserStation[] = [];
 let radioGenre = "pop";
@@ -86,29 +83,6 @@ const liveChannels = [
   }
 ] as const;
 let selectedLiveChannelId = liveChannels[0].id;
-const genesisGamepad = new VirtualGamepad("sega-megadrive-6", (key, action) => genesisPlayer.sendInput(key, action));
-function syncGenesisGamepad(): void {
-  const target = document.querySelector<HTMLElement>("#genesis-gamepad");
-  if (!target) return;
-  const state = genesisPlayer.getState();
-  if (state.status === "running") {
-    genesisGamepad.mount(target);
-    target.classList.remove("genesis-gamepad-hidden");
-  } else {
-    genesisGamepad.destroy();
-    target.replaceChildren();
-    target.classList.add("genesis-gamepad-hidden");
-  }
-}
-genesisPlayer.onStateChange(state => {
-  syncGenesisGamepad();
-  const status = document.querySelector<HTMLElement>("#genesis-status");
-  if (status && state.fileName) {
-    status.textContent = state.error
-      ? "Sega emulator error: " + state.error
-      : "Sega emulator: " + state.status + " · " + state.fileName;
-  }
-});
 const gameLibrary = new GameLibraryProjection(gameCatalog, library);
 const platformStorageAdapter = new WebStorageAdapter("freezzz:platform:");
 const platformSession = new PlatformSessionPersistence(platformStorageAdapter);
@@ -159,7 +133,7 @@ function view(current: PlatformWorkspaceView): string {
     return `<section class="hero panel"><span class="muted">Production workspace</span><h2>Everything in one runtime.</h2><p>Games, library, CHAT, LIVE and RADIO use independent adapters while the workspace preserves the active session.</p><div class="metrics"><span>Runtime<strong>${dStatus()}</strong></span><span>Modules<strong>4</strong></span><span>Game<strong>${gameState.gameId ? escapeHtml(gameState.gameId) : "None"}</strong></span></div><div class="quick-actions"><button data-quick="library" type="button">Open Library</button><button data-quick="chat" type="button">Open Chat</button><button data-quick="live" type="button">Open Live</button><button data-quick="radio" type="button">Open Radio</button></div></section>`;
   }
   if (current === "system") return `<section class="panel"><span class="muted">System</span><h2>Runtime health</h2><div class="status-list"><div>HOST <strong>${host.getStatus()}</strong></div><div>CHAT <strong>${chat.status}</strong></div><div>LIVE <strong>${live.status}</strong></div><div>RADIO <strong>${radio.status}</strong></div><div>LIBRARY <strong>${library.status}</strong></div><div>SESSION <strong>${platformSession.load() ? "RESTORED" : "NEW"}</strong></div></div></section>`;
-  if (current === "library") return `<section class="panel"><span class="muted">Library</span><h2>Games</h2><div class="list">${gameCatalog.list().map(game => `<div class="row"><div><strong>${escapeHtml(game.name)}</strong><span>${escapeHtml(game.emulatorId)} · ${escapeHtml(game.version)}</span></div><button data-game-launch="${escapeHtml(game.id)}" type="button">Launch</button></div>`).join("")}</div><div class="game-status"><span>Status: ${gamePlayer.getState().status}</span><span>Frames: ${gamePlayer.getState().frame}</span><div class="actions"><button id="game-save" type="button">Save</button><button id="game-pause" type="button">Pause</button><button id="game-resume" type="button">Resume</button><button id="game-exit" type="button">Exit</button></div></div><canvas id="game-canvas" width="256" height="240" aria-label="Game display"></canvas><hr><span class="muted">Sega Mega Drive / Genesis</span><h2>Mega Drive Collection</h2><p class="muted">Choose a local ROM you are entitled to use. ROM files are never uploaded to the platform.</p><div class="list genesis-library"><div class="row genesis-row"><div><strong>Local Mega Drive ROM</strong><span>Test only · choose a ROM from your own storage</span></div><label class="genesis-file-button">Select ROM<input id="genesis-rom-local" type="file" accept=".md,.gen,.bin,.smd,.mdx"></label></div></div><div id="genesis-status" class="game-status">Sega emulator: idle</div><div id="genesis-player" style="width:100%;min-height:480px;background:#000"></div><div id="genesis-gamepad"></div></section>`;
+  if (current === "library") return `<section class="panel"><span class="muted">Library</span><h2>Games</h2><div class="list">${gameCatalog.list().map(game => `<div class="row"><div><strong>${escapeHtml(game.name)}</strong><span>${escapeHtml(game.emulatorId)} · ${escapeHtml(game.version)}</span></div><button data-game-launch="${escapeHtml(game.id)}" type="button">Launch</button></div>`).join("")}</div><div class="game-status"><span>Status: ${gamePlayer.getState().status}</span><span>Frames: ${gamePlayer.getState().frame}</span><div class="actions"><button id="game-save" type="button">Save</button><button id="game-pause" type="button">Pause</button><button id="game-resume" type="button">Resume</button><button id="game-exit" type="button">Exit</button></div></div><canvas id="game-canvas" width="256" height="240" aria-label="Game display"></canvas></section>`;
   if (current === "chat") return `<section class="panel"><span class="muted">CHAT</span><h2>General</h2><div class="chat-log">${chat.store.listMessages("general").map(message => `<div class="chat-message"><strong>${escapeHtml(message.senderId)}</strong><span>${escapeHtml(message.text)}</span><time>${new Date(message.timestamp).toLocaleTimeString()}</time></div>`).join("")}</div><form id="chat-form" class="inline-form"><input id="chat-input" maxlength="500" autocomplete="off" required placeholder="Message"><button type="submit">Send</button></form></section>`;
   if (current === "live") {
     const selected = liveChannels.find(channel => channel.id === selectedLiveChannelId) ?? liveChannels[0];
@@ -202,28 +176,6 @@ function bind(current: PlatformWorkspaceView): void {
     document.querySelector("#game-resume")?.addEventListener("click", () => { try { gamePlayer.resume(); startGameLoop(); } catch (error) { workspace.reportError(error); } render(); });
     document.querySelector("#game-exit")?.addEventListener("click", () => { gamePlayer.exit(); persistSession(); render(); });
     drawGameFrame();
-    document.querySelectorAll<HTMLInputElement>("input[data-genesis-id]").forEach(input => input.addEventListener("change", async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      const target = document.querySelector<HTMLElement>("#genesis-player");
-      const status = document.querySelector<HTMLElement>("#genesis-status");
-      if (!target || !status) return;
-      try {
-        await genesisPlayer.mount(target, file);
-        const expected = input.dataset.genesisName;
-        status.textContent = expected && file.name !== expected
-          ? "Sega emulator: " + genesisPlayer.getState().status + " · selected: " + file.name + " · expected: " + expected
-          : "Sega emulator: " + genesisPlayer.getState().status + " · " + file.name;
-      } catch (error) {
-        status.textContent = "Sega emulator error: " + (error instanceof Error ? error.message : String(error));
-      }
-    }));
-    const gamepadTarget = document.querySelector<HTMLElement>("#genesis-gamepad");
-    if (gamepadTarget) gamepadTarget.classList.add("genesis-gamepad-hidden");
-    syncGenesisGamepad();
-    const genesisState = genesisPlayer.getState();
-    const genesisStatus = document.querySelector<HTMLElement>("#genesis-status");
-    if (genesisStatus && genesisState.fileName) genesisStatus.textContent = "Sega emulator: " + genesisState.status + " · " + genesisState.fileName;
   }
   if (current === "chat") document.querySelector<HTMLFormElement>("#chat-form")?.addEventListener("submit", event => { event.preventDefault(); const input = document.querySelector<HTMLInputElement>("#chat-input"); if (!input?.value.trim()) return; chat.receive({ id: `m-${Date.now()}`, conversationId: "general", senderId: "user", text: input.value.trim(), timestamp: Date.now() }); persistSession(); render(); });
   if (current === "live") {
