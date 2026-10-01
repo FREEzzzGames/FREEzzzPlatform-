@@ -114,20 +114,41 @@ const liveCreators: readonly LiveCreator[] = [
   ]}
 ] as const;
 
+interface LivePopup { readonly id: string; readonly creatorId: string; readonly sourceId: string; }
+const MAX_LIVE_POPUPS = 4;
 let selectedLiveCreatorId = liveCreators[0].id;
 let selectedLiveSourceId = liveCreators[0].sources[0].id;
+let livePopups: LivePopup[] = [];
+
 function selectedLiveCreator(): LiveCreator { return liveCreators.find(creator => creator.id === selectedLiveCreatorId) ?? liveCreators[0]; }
 function selectedLiveSource(): LiveSource { const creator = selectedLiveCreator(); return creator.sources.find(source => source.id === selectedLiveSourceId) ?? creator.sources[0]; }
+function liveSource(creatorId: string, sourceId: string): LiveSource | undefined {
+  return liveCreators.find(creator => creator.id === creatorId)?.sources.find(source => source.id === sourceId);
+}
 function liveEmbedUrl(source: LiveSource): string | undefined {
   if (source.kind === "twitch" && source.channel) {
-    if (window.innerWidth < 400) return undefined;
     const parent = window.location.hostname || "freezzgames.github.io";
     return `https://player.twitch.tv/?${new URLSearchParams({ channel: source.channel, parent, autoplay: "false", muted: "false" }).toString()}`;
   }
   if (source.kind === "youtube" && source.channel) {
-    return `https://www.youtube-nocookie.com/embed/live_stream?${new URLSearchParams({ channel: source.channel, autoplay: "0", rel: "0" }).toString()}`;
+    return `https://www.youtube-nocookie.com/embed/live_stream?${new URLSearchParams({ channel: source.channel, autoplay: "0", rel: "0", playsinline: "1" }).toString()}`;
   }
   return undefined;
+}
+function openLivePopup(creatorId: string, sourceId: string): void {
+  const source = liveSource(creatorId, sourceId);
+  if (!source) return;
+  const existing = livePopups.find(popup => popup.creatorId === creatorId && popup.sourceId === sourceId);
+  if (existing) return;
+  if (livePopups.length >= MAX_LIVE_POPUPS) livePopups = livePopups.slice(1);
+  livePopups = [...livePopups, { id: `${creatorId}-${sourceId}-${Date.now()}`, creatorId, sourceId }];
+  selectedLiveCreatorId = creatorId;
+  selectedLiveSourceId = sourceId;
+  render();
+}
+function closeLivePopup(popupId: string): void {
+  livePopups = livePopups.filter(popup => popup.id !== popupId);
+  render();
 }
 
 const gameLibrary = new GameLibraryProjection(gameCatalog, library);
@@ -232,19 +253,31 @@ function view(current: PlatformWorkspaceView): string {
   if (current === "live") {
     const selected = selectedLiveCreator();
     const source = selectedLiveSource();
-    const embedUrl = liveEmbedUrl(source);
     return `<section class="panel live-portal">
-      <div class="live-title-row"><div><span class="muted">LIVE</span><h2>Стримы</h2><p>Выбирай блогера и источник воспроизведения.</p></div><span class="live-count">${liveCreators.length} creators</span></div>
+      <div class="live-title-row"><div><span class="muted">LIVE</span><h2>Стримы</h2><p>Открывай источники во всплывающих окнах. Одновременно до 4 плееров.</p></div><span class="live-count">${livePopups.length}/${MAX_LIVE_POPUPS} players</span></div>
       <div class="live-feature">
         <div class="live-feature-head">
           <div class="live-creator-title"><div class="live-avatar">${escapeHtml(selected.name.slice(0, 2).toUpperCase())}</div><div><strong>${escapeHtml(selected.name)}</strong><span>${escapeHtml(selected.region)} · ${escapeHtml(selected.categories.join(" · "))}</span></div></div>
-          <a class="live-open" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">Открыть ${escapeHtml(source.label)}</a>
+          <button class="live-open" data-live-open-creator="${escapeHtml(selected.id)}" data-live-open-source="${escapeHtml(source.id)}" type="button">Открыть ${escapeHtml(source.label)}</button>
         </div>
-        <div class="live-source-tabs">${selected.sources.map(item => `<button class="live-source ${item.id === source.id ? "active" : ""}" data-live-source="${escapeHtml(item.id)}" type="button">${escapeHtml(item.label)}${liveEmbedUrl(item) ? " · ▶" : ""}</button>`).join("")}</div>
-        <div class="live-player-shell">${embedUrl ? `<iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(selected.name)} — ${escapeHtml(source.label)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>` : `<div class="live-placeholder"><strong>Этот источник не предоставляет универсальный встроенный live-player.</strong><span>Источник выбран правильно — открой его напрямую кнопкой выше.</span></div>`}</div>
+        <div class="live-source-tabs">${selected.sources.map(item => `<button class="live-source" data-live-open-creator="${escapeHtml(selected.id)}" data-live-open-source="${escapeHtml(item.id)}" type="button">${escapeHtml(item.label)} · ▶</button>`).join("")}</div>
       </div>
-      <div class="live-catalog-head"><strong>Все блогеры</strong><span>Нажми карточку, чтобы открыть его источники.</span></div>
+      <div class="live-catalog-head"><strong>Все блогеры</strong><span>Нажми источник, чтобы открыть отдельное окно.</span></div>
       <div class="live-catalog">${liveCreators.map(creator => `<button class="live-card ${creator.id === selected.id ? "active" : ""}" data-live-creator="${escapeHtml(creator.id)}" type="button"><span class="live-avatar small">${escapeHtml(creator.name.slice(0, 2).toUpperCase())}</span><span class="live-card-main"><strong>${escapeHtml(creator.name)}</strong><span>${escapeHtml(creator.region)}</span><small>${escapeHtml(creator.categories.join(" · "))}</small></span><span class="live-source-count">${creator.sources.length} src</span></button>`).join("")}</div>
+      ${livePopups.length ? `<div class="live-popup-layer" aria-label="LIVE players">
+        <div class="live-popup-grid">${livePopups.map(popup => {
+          const creator = liveCreators.find(item => item.id === popup.creatorId);
+          const popupSource = liveSource(popup.creatorId, popup.sourceId);
+          if (!creator || !popupSource) return "";
+          const embedUrl = liveEmbedUrl(popupSource);
+          return `<article class="live-popup" data-live-popup="${escapeHtml(popup.id)}">
+            <div class="live-popup-head"><strong>${escapeHtml(creator.name)} · ${escapeHtml(popupSource.label)}</strong><button class="live-popup-close" data-live-popup-close="${escapeHtml(popup.id)}" type="button" aria-label="Закрыть плеер">×</button></div>
+            <div class="live-popup-video">${embedUrl
+              ? `<iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(creator.name)} — ${escapeHtml(popupSource.label)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`
+              : `<div class="live-popup-fallback"><strong>Встроенный плеер недоступен для этого источника.</strong><a href="${escapeHtml(popupSource.url)}" target="_blank" rel="noopener noreferrer">Открыть ${escapeHtml(popupSource.label)} напрямую</a></div>`}</div>
+          </article>`;
+        }).join("")}</div>
+      </div>` : ""}
     </section>`;
   }
   const selectedStation = radioStations.find(station => station.stationuuid === radioSelectedId) ?? radioStations[0];
@@ -345,9 +378,13 @@ function bind(current: PlatformWorkspaceView): void {
       selectedLiveSourceId = selectedLiveCreator().sources[0].id;
       render();
     }));
-    document.querySelectorAll<HTMLButtonElement>("[data-live-source]").forEach(button => button.addEventListener("click", () => {
-      selectedLiveSourceId = button.dataset.liveSource ?? selectedLiveCreator().sources[0].id;
-      render();
+    document.querySelectorAll<HTMLButtonElement>("[data-live-open-source]").forEach(button => button.addEventListener("click", () => {
+      const creatorId = button.dataset.liveOpenCreator ?? selectedLiveCreatorId;
+      const sourceId = button.dataset.liveOpenSource ?? selectedLiveSource().id;
+      openLivePopup(creatorId, sourceId);
+    }));
+    document.querySelectorAll<HTMLButtonElement>("[data-live-popup-close]").forEach(button => button.addEventListener("click", () => {
+      closeLivePopup(button.dataset.livePopupClose ?? "");
     }));
   }
   if (current === "radio") {
