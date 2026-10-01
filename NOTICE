@@ -1,0 +1,38 @@
+FREEzzz Platform — Copyright and Third-Party Notice
+
+1. PROJECT CODE
+The original source code of FREEzzz Platform is released under the MIT License
+contained in the repository's LICENSE file, except where a file or dependency
+states otherwise.
+
+2. EMULATORJS
+The project integrates EmulatorJS as a third-party component. EmulatorJS and
+its associated runtime/data remain subject to their own copyright and license
+terms. This notice does not relicense EmulatorJS or its assets.
+
+3. COMMERCIAL GAME SOFTWARE / ROMS
+The following user-supplied Sega Mega Drive ROM images were reviewed for
+identification:
+
+- Mortal Kombat 3 (Europe).md
+- Mortal Kombat II (World).md
+- WWF WrestleMania - The Arcade Game (USA, Europe).md
+- Simpsons, The - Bart vs. the Space Mutants (USA, Europe) (Rev A).md
+
+These titles are commercial copyrighted games. Publicly identifying a game
+or adding a notice file does NOT grant FREEzzzGames a license to reproduce,
+host, distribute, or sublicense the ROM data.
+
+The repository therefore does not claim an open-source license for these ROM
+images. Unless separate written distribution permission has been obtained
+from the applicable rights holder, these ROMs must remain outside the public
+repository and be supplied by the user for local testing.
+
+4. TRADEMARKS
+Game names, character names, logos, publisher names, wrestling-promotion
+names, and other trademarks remain the property of their respective owners.
+They are referenced only for identification and compatibility purposes.
+
+5. NO IMPLIED LICENSE
+Nothing in this repository grants rights to third-party copyrighted games,
+ROM images, music, graphics, trademarks, or other proprietary materials.
