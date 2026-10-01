@@ -212,3 +212,50 @@ footer{display:flex;justify-content:space-between;align-items:center;padding:12p
   .live-popup-actions a,.live-popup-actions button{padding:7px 8px;font-size:11px}
   .live-source{padding:7px 9px}
 }
+
+
+/* GLOBAL RESPONSIVE SCALE — both DEV and USER modes */
+html{width:100%;min-width:0;overflow-x:hidden}
+body{width:100%;min-width:0;overflow-x:hidden;overscroll-behavior-x:none}
+#app{width:100%;min-width:0;overflow-x:hidden}
+.workspace{max-width:1040px;width:100%;min-width:0;padding-bottom:72px}
+.developer-ui-shell{min-width:0;width:100%}
+.topbar,.nav,.panel,footer,.error{min-width:0}
+button,input,select,textarea{max-width:100%}
+img,video,iframe,canvas{max-width:100%}
+.developer-ui-toggle{max-width:none;white-space:nowrap;touch-action:manipulation}
+@media(max-width:900px){
+  .workspace{padding-left:14px;padding-right:14px}
+  .topbar{gap:12px}
+  .topbar h1{font-size:clamp(22px,5vw,30px)}
+  .nav{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .panel{padding:20px}
+  .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:650px){
+  .workspace{padding:10px 10px 64px;gap:10px}
+  .topbar{padding:5px 0 12px;align-items:flex-start}
+  .topbar h1{font-size:22px}
+  .eyebrow{font-size:9px}
+  .state{font-size:10px;padding:6px 8px}
+  .nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .nav button{min-height:42px;padding:9px 6px;font-size:13px}
+  .panel{min-height:260px;padding:14px;border-radius:11px}
+  h2{font-size:clamp(22px,7vw,30px)}
+  .hero{min-height:340px}
+  .hero p{font-size:14px}
+  .metrics{grid-template-columns:1fr;gap:7px}
+  footer{align-items:flex-start;gap:10px;flex-direction:column}
+  .footer-actions{width:100%}
+  .footer-actions button{flex:1;min-width:0}
+  .developer-ui-toggle{right:7px;bottom:max(7px,env(safe-area-inset-bottom));padding:8px 9px;font-size:8px}
+}
+@media(max-width:399px){
+  .workspace{padding-left:7px;padding-right:7px}
+  .nav button{font-size:12px;min-height:40px}
+  .panel{padding:12px}
+  .hero{min-height:300px}
+}
+@media(min-width:1200px){
+  .workspace{padding-left:24px;padding-right:24px}
+}
