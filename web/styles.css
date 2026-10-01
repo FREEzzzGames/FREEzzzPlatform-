@@ -114,3 +114,42 @@ footer{display:flex;justify-content:space-between;align-items:center;padding:12p
 /* CHAT — Telegram bridge UI, isolated to CHAT */
 .chat-portal{overflow:hidden}.chat-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:14px}.chat-heading h2{margin:4px 0 3px}.chat-heading p{margin:0;color:#737e8f;font-size:12px}.chat-connection{display:flex;align-items:center;gap:7px;border:1px solid #303b49;background:#111821;border-radius:999px;padding:7px 10px;font:9px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;white-space:nowrap;color:#7f8999}.chat-connection span{width:7px;height:7px;border-radius:50%;background:#4a5564}.chat-connection.online{color:#b7d8c0;border-color:#385347}.chat-connection.online span{background:#78c891;box-shadow:0 0 10px rgba(120,200,145,.45)}.chat-connection.connecting span{background:#c7ae73}.chat-connection.error{color:#d6a7a7;border-color:#5a3b3b}.chat-connection.error span{background:#d77d7d}.chat-error{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:10px;border:1px solid #503a3a;background:#171014;color:#d7b3b3;border-radius:9px;font-size:12px}.chat-error button{margin-left:auto;border:1px solid #5b4747;background:#24181c;color:#eee;padding:7px 10px;border-radius:7px;cursor:pointer}.chat-log{scroll-behavior:smooth}.chat-message{background:#0f151d}.chat-message.system{opacity:.75}.chat-message strong{min-width:0;overflow-wrap:anywhere}.chat-message span{line-height:1.45}.chat-message time{white-space:nowrap}.chat-form{}
 @media(max-width:650px){.chat-heading{align-items:flex-start;flex-direction:column}.chat-connection{align-self:flex-start}.chat-error{align-items:flex-start;flex-direction:column}.chat-error button{margin-left:0}}
+
+
+/* LIVE custom streamer controls — LIVE only */
+.live-title-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;min-width:0}
+.live-add-button{border:1px solid #4b5b6f;background:#17202b;color:#eef2f8;padding:9px 12px;border-radius:9px;cursor:pointer;white-space:nowrap}
+.live-add-button:hover{border-color:#71859a;background:#202b37}
+.live-card-remove{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;flex:0 0 26px;border:1px solid #3a4655;border-radius:7px;background:#141b24;color:#9eabb9;font-size:18px;line-height:1;cursor:pointer;z-index:2}
+.live-card-remove:hover,.live-card-remove:focus-visible{border-color:#8b6262;background:#24191d;color:#fff;outline:none}
+.live-catalog-head>div{min-width:0;display:flex;flex-direction:column;gap:3px}
+.live-add-modal{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,5,8,.78);backdrop-filter:blur(7px);overflow:auto}
+.live-add-dialog{width:min(520px,100%);box-sizing:border-box;border:1px solid #354252;border-radius:15px;background:#0b1118;color:#e9eef5;box-shadow:0 24px 80px rgba(0,0,0,.55);padding:16px}
+.live-add-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}
+.live-add-head h3{margin:5px 0 4px;font-size:20px}
+.live-add-head p{margin:0;color:#758195;font-size:11px}
+.live-add-close{width:32px;height:32px;flex:0 0 32px;border:0;border-radius:7px;background:transparent;color:#cbd4df;font-size:24px;line-height:1;cursor:pointer}
+.live-add-close:hover{background:#1a222d}
+.live-add-label{display:flex;flex-direction:column;gap:7px;color:#9aa6b6;font-size:11px}
+.live-add-label input{width:100%;box-sizing:border-box;border:1px solid #394656;border-radius:9px;background:#111821;color:#eef2f8;padding:11px 12px;font:13px Inter,system-ui,sans-serif;outline:none}
+.live-add-label input:focus{border-color:#71859a;box-shadow:0 0 0 2px rgba(113,133,154,.12)}
+.live-add-error{min-height:18px;margin-top:9px;color:#d7a7a7;font-size:11px;overflow-wrap:anywhere}
+.live-add-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.live-add-actions button{border:1px solid #394656;background:#151d27;color:#dce4ec;padding:9px 13px;border-radius:8px;cursor:pointer}
+.live-add-actions .live-add-submit{border-color:#61768c;background:#1b2936;color:#fff}
+.live-add-actions button:hover{background:#202b37}
+
+@media(max-width:650px){
+  .live-title-actions{width:100%;justify-content:flex-start}
+  .live-add-button{flex:1 1 auto}
+  .live-add-modal{align-items:flex-start;padding:10px}
+  .live-add-dialog{margin-top:8vh;padding:13px}
+}
+@media(max-width:399px){
+  .live-title-actions{align-items:stretch;flex-direction:column}
+  .live-add-button{width:100%}
+  .live-add-dialog{width:100%;margin-top:4vh}
+  .live-popup-layer{padding:4px;overscroll-behavior:contain}
+  .live-popup-video{min-width:0}
+  .live-popup-video iframe{max-width:100%}
+}
