@@ -68,8 +68,24 @@ let midiOctave = 4;
 let midiActiveNotes = new Set<number>();
 let midiPadBank = 0;
 type LiveSourceKind = "twitch" | "youtube";
-interface LiveSource { readonly id: string; readonly label: string; readonly kind: LiveSourceKind; readonly url: string; readonly channel?: string; readonly channelId?: string; }
-interface LiveCreator { readonly id: string; readonly name: string; readonly region: string; readonly categories: readonly string[]; readonly sources: readonly LiveSource[]; }
+interface LiveSource {
+  readonly id: string;
+  readonly label: string;
+  readonly kind: LiveSourceKind;
+  readonly url: string;
+  readonly channel?: string;
+  readonly channelId?: string;
+  readonly videoId?: string;
+  readonly youtubeHandle?: string;
+}
+interface LiveCreator {
+  readonly id: string;
+  readonly name: string;
+  readonly region: string;
+  readonly categories: readonly string[];
+  readonly sources: readonly LiveSource[];
+  readonly custom?: boolean;
+}
 
 const liveCreators: readonly LiveCreator[] = [
   { id: "leb1ga", name: "Leb1ga", region: "🇺🇦 Украина", categories: ["Just Chatting"], sources: [
@@ -126,15 +142,45 @@ interface LivePlaybackStatusFile {
   readonly sources?: Readonly<Record<string, LivePlaybackEntry>>;
 }
 const MAX_LIVE_POPUPS = 4;
+const LIVE_CUSTOM_STORAGE_KEY = "freezzz:live:custom-creators";
+let customLiveCreators: LiveCreator[] = loadCustomLiveCreators();
 let selectedLiveCreatorId = liveCreators[0].id;
 let selectedLiveSourceId = liveCreators[0].sources[0].id;
 let livePopups: LivePopup[] = [];
 let livePlaybackStatus: LivePlaybackStatusFile = { sources: {} };
 
-function selectedLiveCreator(): LiveCreator { return liveCreators.find(creator => creator.id === selectedLiveCreatorId) ?? liveCreators[0]; }
-function selectedLiveSource(): LiveSource { const creator = selectedLiveCreator(); return creator.sources.find(source => source.id === selectedLiveSourceId) ?? creator.sources[0]; }
+function allLiveCreators(): LiveCreator[] {
+  return [...liveCreators, ...customLiveCreators];
+}
+function selectedLiveCreator(): LiveCreator {
+  const creators = allLiveCreators();
+  return creators.find(creator => creator.id === selectedLiveCreatorId) ?? creators[0];
+}
+function selectedLiveSource(): LiveSource {
+  const creator = selectedLiveCreator();
+  return creator.sources.find(source => source.id === selectedLiveSourceId) ?? creator.sources[0];
+}
 function liveSource(creatorId: string, sourceId: string): LiveSource | undefined {
-  return liveCreators.find(creator => creator.id === creatorId)?.sources.find(source => source.id === sourceId);
+  return allLiveCreators().find(creator => creator.id === creatorId)?.sources.find(source => source.id === sourceId);
+}
+function loadCustomLiveCreators(): LiveCreator[] {
+  try {
+    const raw = localStorage.getItem(LIVE_CUSTOM_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(item => {
+      if (!item || typeof item !== "object") return false;
+      const candidate = item as LiveCreator;
+      return typeof candidate.id === "string" && typeof candidate.name === "string" &&
+        Array.isArray(candidate.sources) && candidate.sources.length > 0;
+    }) as LiveCreator[];
+  } catch {
+    return [];
+  }
+}
+function saveCustomLiveCreators(): void {
+  try { localStorage.setItem(LIVE_CUSTOM_STORAGE_KEY, JSON.stringify(customLiveCreators)); } catch {}
 }
 function liveStatusKey(creatorId: string, sourceId: string): string {
   return `${creatorId}:${sourceId}`;
