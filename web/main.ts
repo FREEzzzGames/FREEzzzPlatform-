@@ -67,29 +67,79 @@ let midiError = "";
 let midiOctave = 4;
 let midiActiveNotes = new Set<number>();
 let midiPadBank = 0;
-const liveChannels = [
-  {
-    id: "woodskiy-ded",
-    name: "Вудский Дед",
-    url: "https://www.youtube.com/channel/UCKgQPQj9J3BUgTVci1up75A",
-    embedUrl: "https://www.youtube-nocookie.com/embed/tGMJ59g1Yd0",
-    platform: "YouTube"
-  },
-  {
-    id: "noobfromua",
-    name: "NoobFromUA",
-    url: "https://www.youtube.com/channel/UCfsOfLvadg89Bx8Sv_6WERg",
-    platform: "YouTube"
-  },
-  {
-    id: "smetana",
-    name: "СМЕТАНА",
-    url: "https://www.youtube.com/@smetanaml",
-    embedUrl: "https://www.youtube-nocookie.com/embed/C9j4lS2uO8w",
-    platform: "YouTube"
-  }
+type LiveSourceKind = "twitch" | "youtube" | "external";
+interface LiveSource { readonly id: string; readonly label: string; readonly kind: LiveSourceKind; readonly url: string; readonly channel?: string; }
+interface LiveCreator { readonly id: string; readonly name: string; readonly region: string; readonly categories: readonly string[]; readonly sources: readonly LiveSource[]; }
+
+const liveCreators: readonly LiveCreator[] = [
+  { id: "leb1ga", name: "Leb1ga", region: "🇺🇦 Украина", categories: ["Just Chatting"], sources: [
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/leb1ga", channel: "leb1ga" },
+    { id: "telegram", label: "Telegram", kind: "external", url: "https://t.me/lebigaa" },
+    { id: "instagram", label: "Instagram", kind: "external", url: "https://instagram.com/nonstop.energy" }
+  ]},
+  { id: "dendi", name: "Dendi", region: "🇺🇦 Украина", categories: ["Dota 2"], sources: [
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/dendi", channel: "dendi" }
+  ]},
+  { id: "rolex9", name: "Vitaliy Kushnyryk", region: "🇺🇦 Украина", categories: ["Rolex9"], sources: [
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/rolex9", channel: "rolex9" }
+  ]},
+  { id: "papaplatte", name: "Papaplatte", region: "🇩🇪 Германия", categories: ["Variety", "Minecraft"], sources: [
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/papaplatte", channel: "papaplatte" },
+    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/papaplatte", channel: "UCDmbhGe7-wC1a55l5ZYAZJw" },
+    { id: "instagram", label: "Instagram", kind: "external", url: "https://instagram.com/papaplatte" },
+    { id: "tiktok", label: "TikTok", kind: "external", url: "https://tiktok.com/papaplatte" }
+  ]},
+  { id: "montanablack88", name: "MontanaBlack88", region: "🇩🇪 Германия", categories: ["Variety"], sources: [
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/montanablack88", channel: "montanablack88" },
+    { id: "youtube", label: "YouTube", kind: "external", url: "https://youtube.com/montanablack88" },
+    { id: "instagram", label: "Instagram", kind: "external", url: "https://instagram.com/montanablack" },
+    { id: "tiktok", label: "TikTok", kind: "external", url: "https://tiktok.com/montanablack" }
+  ]},
+  { id: "trymacs", name: "Trymacs", region: "🇩🇪 Германия", categories: ["Variety", "Gaming"], sources: [
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/trymacs", channel: "trymacs" },
+    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/Trymacs", channel: "UC6Gc4KQ1ueDnh8x7plaAD3w" },
+    { id: "instagram", label: "Instagram", kind: "external", url: "https://instagram.com/trymacs" },
+    { id: "tiktok", label: "TikTok", kind: "external", url: "https://tiktok.com/@trymacs" }
+  ]},
+  { id: "smetanduck", name: "smetanduck", region: "🎮 Mobile Legends: Bang Bang", categories: ["Mobile Legends"], sources: [
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/smetanduck", channel: "smetanduck" },
+    { id: "youtube", label: "YouTube", kind: "external", url: "https://youtube.com/@smetanaml" },
+    { id: "tiktok", label: "TikTok", kind: "external", url: "https://tiktok.com/@smetana780" },
+    { id: "discord", label: "Discord", kind: "external", url: "https://discord.gg/T9jftcSC" }
+  ]},
+  { id: "titamin1", name: "titamin1", region: "🎮 Mobile Legends: Bang Bang", categories: ["Mobile Legends"], sources: [
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/titamin1", channel: "titamin1" },
+    { id: "boosty", label: "Boosty", kind: "external", url: "https://boosty.to/titamin" }
+  ]},
+  { id: "dunkelsch4tten", name: "Dunkelsch4tten", region: "🎮 Mobile Legends: Bang Bang", categories: ["Mobile Legends"], sources: [
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/dunkelsch4tten", channel: "dunkelsch4tten" }
+  ]},
+  { id: "buster", name: "Buster", region: "🎮 CS2", categories: ["CS2"], sources: [
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/buster", channel: "buster" }
+  ]},
+  { id: "marmok", name: "Marmok", region: "😂 Юмор", categories: ["YouTube", "Gaming"], sources: [
+    { id: "youtube", label: "YouTube", kind: "external", url: "https://youtube.com/@Marmok" }
+  ]},
+  { id: "zubarefff", name: "Zubarefff (Зубарев)", region: "😂 Юмор", categories: ["Entertainment"], sources: [
+    { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/zubareff", channel: "zubareff" }
+  ]}
 ] as const;
-let selectedLiveChannelId: string = liveChannels[0].id;
+
+let selectedLiveCreatorId = liveCreators[0].id;
+let selectedLiveSourceId = liveCreators[0].sources[0].id;
+function selectedLiveCreator(): LiveCreator { return liveCreators.find(creator => creator.id === selectedLiveCreatorId) ?? liveCreators[0]; }
+function selectedLiveSource(): LiveSource { const creator = selectedLiveCreator(); return creator.sources.find(source => source.id === selectedLiveSourceId) ?? creator.sources[0]; }
+function liveEmbedUrl(source: LiveSource): string | undefined {
+  if (source.kind === "twitch" && source.channel) {
+    const parent = window.location.hostname || "freezzgames.github.io";
+    return `https://player.twitch.tv/?${new URLSearchParams({ channel: source.channel, parent, autoplay: "false", muted: "false" }).toString()}`;
+  }
+  if (source.kind === "youtube" && source.channel) {
+    return `https://www.youtube-nocookie.com/embed/live_stream?${new URLSearchParams({ channel: source.channel, autoplay: "0", rel: "0" }).toString()}`;
+  }
+  return undefined;
+}
+
 const gameLibrary = new GameLibraryProjection(gameCatalog, library);
 const platformStorageAdapter = new WebStorageAdapter("freezzz:platform:");
 const platformSession = new PlatformSessionPersistence(platformStorageAdapter);
@@ -190,32 +240,21 @@ function view(current: PlatformWorkspaceView): string {
     return `<section class="panel chat-portal"><div class="chat-heading"><div><span class="muted">CHAT</span><h2>Telegram Chat</h2><p>Portal interface · synchronized with the Telegram group</p></div><div class="chat-connection ${chatSyncStatus}"><span></span>${statusLabel}</div></div>${chatSyncError ? `<div class="chat-error">${escapeHtml(chatSyncError)}<button id="chat-reconnect" type="button">Reconnect</button></div>` : ""}<div class="chat-log" id="chat-log">${messages.map(message => `<div class="chat-message ${message.senderId === "system" ? "system" : ""}"><strong>${escapeHtml(chatSenderNames.get(message.senderId) || message.senderId)}</strong><span>${escapeHtml(message.text)}</span><time>${new Date(message.timestamp).toLocaleTimeString()}</time></div>`).join("")}</div><form id="chat-form" class="inline-form"><input id="chat-input" maxlength="4096" autocomplete="off" required placeholder="Write a message to Telegram"><button type="submit">Send</button></form></section>`;
   }
   if (current === "live") {
-    const selected = liveChannels.find(channel => channel.id === selectedLiveChannelId) ?? liveChannels[0];
+    const selected = selectedLiveCreator();
+    const source = selectedLiveSource();
+    const embedUrl = liveEmbedUrl(source);
     return `<section class="panel live-portal">
-      <span class="muted">LIVE</span>
-      <h2>Стримы</h2>
+      <div class="live-title-row"><div><span class="muted">LIVE</span><h2>Стримы</h2><p>Выбирай блогера и источник воспроизведения.</p></div><span class="live-count">${liveCreators.length} creators</span></div>
       <div class="live-feature">
         <div class="live-feature-head">
-          <div><strong>${escapeHtml(selected.name)}</strong><span>${escapeHtml(selected.platform)} · ссылка из списка LIVE</span></div>
-          <a class="live-open" href="${escapeHtml(selected.url)}" target="_blank" rel="noopener noreferrer">Открыть канал</a>
+          <div class="live-creator-title"><div class="live-avatar">${escapeHtml(selected.name.slice(0, 2).toUpperCase())}</div><div><strong>${escapeHtml(selected.name)}</strong><span>${escapeHtml(selected.region)} · ${escapeHtml(selected.categories.join(" · "))}</span></div></div>
+          <a class="live-open" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">Открыть источник</a>
         </div>
-        <div class="live-player-shell">
-          ${("embedUrl" in selected && selected.embedUrl)
-            ? `<iframe src="${escapeHtml(selected.embedUrl)}" title="${escapeHtml(selected.name)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`
-            : `<div class="live-placeholder"><strong>Прямой встроенный плеер недоступен для этого канала</strong><span>Открой канал по кнопке выше.</span></div>`}
-        </div>
+        <div class="live-source-tabs">${selected.sources.map(item => `<button class="live-source ${item.id === source.id ? "active" : ""}" data-live-source="${escapeHtml(item.id)}" type="button">${escapeHtml(item.label)}${liveEmbedUrl(item) ? " · ▶" : ""}</button>`).join("")}</div>
+        <div class="live-player-shell">${embedUrl ? `<iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(selected.name)} — ${escapeHtml(source.label)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>` : `<div class="live-placeholder"><strong>Этот источник не предоставляет универсальный встроенный live-player.</strong><span>Источник выбран правильно — открой его напрямую кнопкой выше.</span></div>`}</div>
       </div>
-      <div class="live-carousel">
-        ${liveChannels.map(channel => `<button class="live-card ${channel.id === selected.id ? "active" : ""}" data-live-channel="${channel.id}" type="button">
-          <strong>${escapeHtml(channel.name)}</strong>
-          <span>${escapeHtml(channel.platform)}</span>
-        </button>`).join("")}
-      </div>
-      <div class="live-native-player">
-        <span class="muted">Native LIVE adapter test</span>
-        <div id="live-player"></div>
-        <div class="actions"><button id="live-load" type="button">Load test</button><button id="live-play" type="button">Play</button><button id="live-pause" type="button">Pause</button><button id="live-stop" type="button">Stop</button></div>
-      </div>
+      <div class="live-catalog-head"><strong>Все блогеры</strong><span>Нажми карточку, чтобы открыть его источники.</span></div>
+      <div class="live-catalog">${liveCreators.map(creator => `<button class="live-card ${creator.id === selected.id ? "active" : ""}" data-live-creator="${escapeHtml(creator.id)}" type="button"><span class="live-avatar small">${escapeHtml(creator.name.slice(0, 2).toUpperCase())}</span><span class="live-card-main"><strong>${escapeHtml(creator.name)}</strong><span>${escapeHtml(creator.region)}</span><small>${escapeHtml(creator.categories.join(" · "))}</small></span><span class="live-source-count">${creator.sources.length} src</span></button>`).join("")}</div>
     </section>`;
   }
   const selectedStation = radioStations.find(station => station.stationuuid === radioSelectedId) ?? radioStations[0];
@@ -311,15 +350,15 @@ function bind(current: PlatformWorkspaceView): void {
     if (log) log.scrollTop = log.scrollHeight;
   } persistSession(); render(); });
   if (current === "live") {
-    document.querySelectorAll<HTMLButtonElement>("[data-live-channel]").forEach(button => button.addEventListener("click", () => {
-      selectedLiveChannelId = button.dataset.liveChannel ?? liveChannels[0].id;
+    document.querySelectorAll<HTMLButtonElement>("[data-live-creator]").forEach(button => button.addEventListener("click", () => {
+      selectedLiveCreatorId = button.dataset.liveCreator ?? liveCreators[0].id;
+      selectedLiveSourceId = selectedLiveCreator().sources[0].id;
       render();
     }));
-    document.querySelector("#live-load")?.addEventListener("click", () => { try { live.load("demo-stream", "web"); render(); } catch (error) { workspace.reportError(error); render(); } });
-    document.querySelector("#live-play")?.addEventListener("click", () => { try { live.play(); } catch (error) { workspace.reportError(error); render(); } });
-    document.querySelector("#live-pause")?.addEventListener("click", () => { try { live.pause(); } catch (error) { workspace.reportError(error); render(); } });
-    document.querySelector("#live-stop")?.addEventListener("click", () => { try { live.stopPlayback(); } catch (error) { workspace.reportError(error); render(); } });
-    const target = document.querySelector("#live-player"); if (target && liveElement && liveElement.parentElement !== target) target.append(liveElement);
+    document.querySelectorAll<HTMLButtonElement>("[data-live-source]").forEach(button => button.addEventListener("click", () => {
+      selectedLiveSourceId = button.dataset.liveSource ?? selectedLiveCreator().sources[0].id;
+      render();
+    }));
   }
   if (current === "radio") {
     document.querySelector<HTMLFormElement>("#radio-search-form")?.addEventListener("submit", event => {
