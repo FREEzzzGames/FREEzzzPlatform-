@@ -157,3 +157,12 @@ footer{display:flex;justify-content:space-between;align-items:center;padding:12p
 .live-card-select{min-width:0;flex:1 1 auto;display:flex;align-items:center;gap:9px;text-align:left;border:0;background:transparent;color:inherit;padding:0;cursor:pointer;font:inherit}
 .live-card-select:focus-visible{outline:2px solid #71859a;outline-offset:2px;border-radius:8px}
 .live-card-select .live-card-main{min-width:0}
+
+
+/* Developer UI visibility switch */
+.developer-ui-shell.is-hidden{display:none!important}
+.developer-ui-toggle{position:fixed;right:10px;bottom:10px;z-index:1400;border:1px solid #3b4a5b;border-radius:9px;background:rgba(10,15,21,.92);color:#8f9cad;padding:7px 9px;font:600 9px/1 system-ui,sans-serif;letter-spacing:.08em;cursor:pointer;backdrop-filter:blur(8px);box-shadow:0 5px 18px rgba(0,0,0,.3)}
+.developer-ui-toggle:hover,.developer-ui-toggle:focus-visible{border-color:#71859a;color:#eef2f8;outline:none}
+@media(max-width:650px){
+  .developer-ui-toggle{right:7px;bottom:7px;padding:8px 9px;font-size:8px}
+}
