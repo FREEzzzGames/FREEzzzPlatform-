@@ -131,6 +131,8 @@ async function initializeChatSync(): Promise<void> {
   }
 }
 
+void initializeChatSync();
+
 const telegramBridge = (globalThis as typeof globalThis & { Telegram?: { WebApp?: { initData?: string; initDataUnsafe?: Readonly<{ user?: { id: number; username?: string; first_name?: string; last_name?: string } }>; ready(): void; expand(): void; close(): void; sendData?(data: string): void } } }).Telegram?.WebApp;
 if (telegramBridge) {
   telegramIntegration.initialize({ id: "webapp", username: "freezzz", version: "1.0.0" });
