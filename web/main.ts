@@ -37,7 +37,6 @@ library.add({ id: "platform-demo", title: "Platform Demo", type: "game", version
 live.registerChannel({ id: "demo-channel", name: "Demo Channel", streamIds: [] });
 live.registerStream({ id: "demo-stream", channelId: "demo-channel", title: "Demo stream", source: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", protocol: "progressive", isLive: false });
 
-
 const mount = (() => {
   const element = document.querySelector<HTMLDivElement>("#app");
   if (!element) throw new Error("Platform workspace mount point is missing.");
@@ -95,7 +94,7 @@ if (telegramBridge) {
 gameLibrary.sync();
 
 const views: readonly PlatformWorkspaceView[] = ["home", "library", "chat", "live", "radio", "system"];
-const labels: Record<PlatformWorkspaceView, string> = { home: "Home", library: "Library", chat: "Chat", live: "Live", radio: "Radio", system: "System" };
+const labels: Record<PlatformWorkspaceView, string> = { home: "Home", library: "Game Test", chat: "Chat", live: "Live", radio: "Radio", system: "System" };
 
 function persistSession(): void {
   platformSession.save({ workspace: workspace.snapshot(), selectedGameId: gamePlayer.getState().gameId });
@@ -126,10 +125,14 @@ function render(): void {
 function view(current: PlatformWorkspaceView): string {
   if (current === "home") {
     const gameState = gamePlayer.getState();
-    return `<section class="hero panel"><span class="muted">Production workspace</span><h2>Everything in one runtime.</h2><p>Games, library, CHAT, LIVE and RADIO use independent adapters while the workspace preserves the active session.</p><div class="metrics"><span>Runtime<strong>${dStatus()}</strong></span><span>Modules<strong>4</strong></span><span>Game<strong>${gameState.gameId ? escapeHtml(gameState.gameId) : "None"}</strong></span></div><div class="quick-actions"><button data-quick="library" type="button">Open Library</button><button data-quick="chat" type="button">Open Chat</button><button data-quick="live" type="button">Open Live</button><button data-quick="radio" type="button">Open Radio</button></div></section>`;
+    return `<section class="hero panel"><span class="muted">Production workspace</span><h2>Everything in one runtime.</h2><p>Games, library, CHAT, LIVE and RADIO use independent adapters while the workspace preserves the active session.</p><div class="metrics"><span>Runtime<strong>${dStatus()}</strong></span><span>Modules<strong>4</strong></span><span>Game<strong>${gameState.gameId ? escapeHtml(gameState.gameId) : "None"}</strong></span></div><div class="quick-actions"><button data-quick="library" type="button">Open Game Test</button><button data-quick="chat" type="button">Open Chat</button><button data-quick="live" type="button">Open Live</button><button data-quick="radio" type="button">Open Radio</button></div></section>`;
   }
   if (current === "system") return `<section class="panel"><span class="muted">System</span><h2>Runtime health</h2><div class="status-list"><div>HOST <strong>${host.getStatus()}</strong></div><div>CHAT <strong>${chat.status}</strong></div><div>LIVE <strong>${live.status}</strong></div><div>RADIO <strong>${radio.status}</strong></div><div>LIBRARY <strong>${library.status}</strong></div><div>SESSION <strong>${platformSession.load() ? "RESTORED" : "NEW"}</strong></div></div></section>`;
-  if (current === "library") return `<section class="panel"><span class="muted">Library</span><h2>Games</h2><div class="list">${gameCatalog.list().map(game => `<div class="row"><div><strong>${escapeHtml(game.name)}</strong><span>${escapeHtml(game.emulatorId)} · ${escapeHtml(game.version)}</span></div><button data-game-launch="${escapeHtml(game.id)}" type="button">Launch</button></div>`).join("")}</div><div class="game-status"><span>Status: ${gamePlayer.getState().status}</span><span>Frames: ${gamePlayer.getState().frame}</span><div class="actions"><button id="game-save" type="button">Save</button><button id="game-pause" type="button">Pause</button><button id="game-resume" type="button">Resume</button><button id="game-exit" type="button">Exit</button></div></div><canvas id="game-canvas" width="256" height="240" aria-label="Game display"></canvas></section>`;
+  if (current === "library") {
+    const games = gameCatalog.list();
+    const state = gamePlayer.getState();
+    return `<section class="panel game-test"><span class="muted">WEB GAME TEST</span><h2>Gameplay test</h2><p>Этот экран предназначен для быстрой проверки игрового runtime в браузере. Android APK для каждой итерации больше не нужен.</p><div class="game-test-layout"><div class="game-screen-wrap"><canvas id="game-canvas" width="256" height="240" aria-label="Game display"></canvas><div class="game-status"><span>Status: ${state.status}</span><span>Frames: ${state.frame}</span><span>Game: ${state.gameId ? escapeHtml(state.gameId) : "None"}</span></div></div><div class="game-test-controls"><h3>Games</h3>${games.length ? games.map(game => `<button class="game-select ${state.gameId === game.id ? "active" : ""}" data-game-launch="${escapeHtml(game.id)}" type="button"><strong>${escapeHtml(game.name)}</strong><span>${escapeHtml(game.emulatorId)} · ${escapeHtml(game.version)}</span></button>`).join("") : `<div class="game-empty">Игры пока не зарегистрированы в веб-каталоге.</div>`}<div class="actions"><button id="game-save" type="button">Save</button><button id="game-pause" type="button">Pause</button><button id="game-resume" type="button">Resume</button><button id="game-exit" type="button">Exit</button></div></div></div></section>`;
+  }
   if (current === "chat") return `<section class="panel"><span class="muted">CHAT</span><h2>General</h2><div class="chat-log">${chat.store.listMessages("general").map(message => `<div class="chat-message"><strong>${escapeHtml(message.senderId)}</strong><span>${escapeHtml(message.text)}</span><time>${new Date(message.timestamp).toLocaleTimeString()}</time></div>`).join("")}</div><form id="chat-form" class="inline-form"><input id="chat-input" maxlength="500" autocomplete="off" required placeholder="Message"><button type="submit">Send</button></form></section>`;
   if (current === "live") {
     const selected = liveChannels.find(channel => channel.id === selectedLiveChannelId) ?? liveChannels[0];
@@ -256,7 +259,7 @@ function drawGameFrame(): void {
   const context = canvas.getContext("2d"); if (!context) return;
   const frame = gamePlayer.getVideoFrame(); if (frame.length !== 256 * 240) return;
   const image = context.createImageData(256, 240);
-  for (let i = 0; i < frame.length; i++) { const value = frame[i]; const pixel = i * 4; image.data[pixel] = value; image.data[pixel + 1] = value; image.data[pixel + 2] = value; image.data[pixel + 3] = 255; }
+  for (let i = 0; i < frame.length; i += 1) { const value = frame[i]; const pixel = i * 4; image.data[pixel] = value; image.data[pixel + 1] = value; image.data[pixel + 2] = value; image.data[pixel + 3] = 255; }
   context.putImageData(image, 0, 0);
 }
 
