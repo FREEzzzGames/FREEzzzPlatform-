@@ -49,6 +49,11 @@ jobs:
           grep -q '.sega-a{left:0;top:60px}' web/styles.css
           grep -q '.sega-b{left:69px;top:60px}' web/styles.css
           grep -q '.sega-c{left:138px;top:60px}' web/styles.css
+      - name: Verify WebView restart lifecycle
+        run: |
+          grep -q 'Always boot the local portal' android/app/src/main/java/com/freezzz/platform/MainActivity.java
+          grep -q 'onRenderProcessGone' android/app/src/main/java/com/freezzz/platform/MainActivity.java
+          grep -q 'WebView renderer exited' android/app/src/main/java/com/freezzz/platform/MainActivity.java
       - name: Verify APK output
         run: |
           test -s android/app/build/outputs/apk/debug/app-debug.apk
