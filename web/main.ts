@@ -68,7 +68,7 @@ let midiOctave = 4;
 let midiActiveNotes = new Set<number>();
 let midiPadBank = 0;
 type LiveSourceKind = "twitch" | "youtube";
-interface LiveSource { readonly id: string; readonly label: string; readonly kind: LiveSourceKind; readonly url: string; readonly channel?: string; }
+interface LiveSource { readonly id: string; readonly label: string; readonly kind: LiveSourceKind; readonly url: string; readonly channel?: string; readonly channelId?: string; }
 interface LiveCreator { readonly id: string; readonly name: string; readonly region: string; readonly categories: readonly string[]; readonly sources: readonly LiveSource[]; }
 
 const liveCreators: readonly LiveCreator[] = [
@@ -87,7 +87,7 @@ const liveCreators: readonly LiveCreator[] = [
   ]},
   { id: "montanablack88", name: "MontanaBlack88", region: "🇩🇪 Германия", categories: ["Variety"], sources: [
     { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/montanablack88", channel: "montanablack88" },
-    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/montanablack88" }
+    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/montanablack88", channel: "UCpAMOlA_0hFXopIxMq8ar0w" }
   ]},
   { id: "trymacs", name: "Trymacs", region: "🇩🇪 Германия", categories: ["Variety", "Gaming"], sources: [
     { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/trymacs", channel: "trymacs" },
@@ -107,7 +107,7 @@ const liveCreators: readonly LiveCreator[] = [
     { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/buster", channel: "buster" }
   ]},
   { id: "marmok", name: "Marmok", region: "😂 Юмор", categories: ["YouTube", "Gaming"], sources: [
-    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/@Marmok" }
+    { id: "youtube", label: "YouTube", kind: "youtube", url: "https://youtube.com/@Marmok", channel: "UCkxpiTIU50N3_dNt4WMMZyw" }
   ]},
   { id: "zubarefff", name: "Zubarefff (Зубарев)", region: "😂 Юмор", categories: ["Entertainment"], sources: [
     { id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/zubareff", channel: "zubareff" }
@@ -115,26 +115,66 @@ const liveCreators: readonly LiveCreator[] = [
 ] as const;
 
 interface LivePopup { readonly id: string; readonly creatorId: string; readonly sourceId: string; }
+interface LivePlaybackEntry {
+  readonly online: boolean;
+  readonly liveVideoId?: string;
+  readonly fallbackVideoId?: string;
+  readonly checkedAt?: string;
+}
+interface LivePlaybackStatusFile {
+  readonly generatedAt?: string;
+  readonly sources?: Readonly<Record<string, LivePlaybackEntry>>;
+}
 const MAX_LIVE_POPUPS = 4;
 let selectedLiveCreatorId = liveCreators[0].id;
 let selectedLiveSourceId = liveCreators[0].sources[0].id;
 let livePopups: LivePopup[] = [];
+let livePlaybackStatus: LivePlaybackStatusFile = { sources: {} };
 
 function selectedLiveCreator(): LiveCreator { return liveCreators.find(creator => creator.id === selectedLiveCreatorId) ?? liveCreators[0]; }
 function selectedLiveSource(): LiveSource { const creator = selectedLiveCreator(); return creator.sources.find(source => source.id === selectedLiveSourceId) ?? creator.sources[0]; }
 function liveSource(creatorId: string, sourceId: string): LiveSource | undefined {
   return liveCreators.find(creator => creator.id === creatorId)?.sources.find(source => source.id === sourceId);
 }
-function liveEmbedUrl(source: LiveSource): string | undefined {
+function liveStatusKey(creatorId: string, sourceId: string): string {
+  return `${creatorId}:${sourceId}`;
+}
+function liveEmbedUrl(creatorId: string, source: LiveSource): string | undefined {
+  const status = livePlaybackStatus.sources?.[liveStatusKey(creatorId, source.id)];
+  if (status && !status.online && status.fallbackVideoId) {
+    if (source.kind === "twitch") {
+      const parent = window.location.hostname || "freezzgames.github.io";
+      return `https://player.twitch.tv/?${new URLSearchParams({ video: `v${status.fallbackVideoId}`, parent, autoplay: "false", muted: "false" }).toString()}`;
+    }
+    if (source.kind === "youtube") {
+      return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(status.fallbackVideoId)}?${new URLSearchParams({ autoplay: "0", rel: "0", playsinline: "1" }).toString()}`;
+    }
+  }
   if (source.kind === "twitch" && source.channel) {
     const parent = window.location.hostname || "freezzgames.github.io";
     return `https://player.twitch.tv/?${new URLSearchParams({ channel: source.channel, parent, autoplay: "false", muted: "false" }).toString()}`;
   }
   if (source.kind === "youtube" && source.channel) {
+    if (status?.online && status.liveVideoId) {
+      return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(status.liveVideoId)}?${new URLSearchParams({ autoplay: "0", rel: "0", playsinline: "1" }).toString()}`;
+    }
     return `https://www.youtube-nocookie.com/embed/live_stream?${new URLSearchParams({ channel: source.channel, autoplay: "0", rel: "0", playsinline: "1" }).toString()}`;
   }
   return undefined;
 }
+async function loadLivePlaybackStatus(): Promise<void> {
+  try {
+    const response = await fetch(`./live-status.json?ts=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) return;
+    const data = await response.json() as LivePlaybackStatusFile;
+    if (!data || typeof data !== "object") return;
+    livePlaybackStatus = data;
+    if (workspace.getState().view === "live") render();
+  } catch {
+    // LIVE keeps direct provider playback when the status cache is unavailable.
+  }
+}
+void loadLivePlaybackStatus();
 function openLivePopup(creatorId: string, sourceId: string): void {
   const source = liveSource(creatorId, sourceId);
   if (!source) return;
@@ -269,7 +309,7 @@ function view(current: PlatformWorkspaceView): string {
           const creator = liveCreators.find(item => item.id === popup.creatorId);
           const popupSource = liveSource(popup.creatorId, popup.sourceId);
           if (!creator || !popupSource) return "";
-          const embedUrl = liveEmbedUrl(popupSource);
+          const embedUrl = liveEmbedUrl(popup.creatorId, popupSource);
           return `<article class="live-popup" data-live-popup="${escapeHtml(popup.id)}">
             <div class="live-popup-head"><strong>${escapeHtml(creator.name)} · ${escapeHtml(popupSource.label)}</strong><button class="live-popup-close" data-live-popup-close="${escapeHtml(popup.id)}" type="button" aria-label="Закрыть плеер">×</button></div>
             <div class="live-popup-video">${embedUrl
