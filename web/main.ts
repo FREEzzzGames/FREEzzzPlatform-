@@ -181,6 +181,22 @@ function loadCustomLiveCreators(): LiveCreator[] {
 function saveCustomLiveCreators(): void {
   try { localStorage.setItem(LIVE_CUSTOM_STORAGE_KEY, JSON.stringify(customLiveCreators)); } catch {}
 }
+function removeCustomLiveCreator(creatorId: string): void {
+  if (!creatorId) return;
+  const before = customLiveCreators.length;
+  customLiveCreators = customLiveCreators.filter(creator => creator.id !== creatorId);
+  if (customLiveCreators.length === before) return;
+  if (selectedLiveCreatorId === creatorId) {
+    const fallback = allLiveCreators()[0];
+    selectedLiveCreatorId = fallback?.id ?? liveCreators[0]?.id ?? "";
+    selectedLiveSourceId = fallback?.sources[0]?.id ?? liveCreators[0]?.sources[0]?.id ?? "";
+  }
+  if (livePopup?.creatorId === creatorId) {
+    livePopup = null;
+  }
+  saveCustomLiveCreators();
+  render();
+}
 function addLiveCreatorToScreen(creatorId: string, sourceId?: string): void {
   const creator = allLiveCreators().find(item => item.id === creatorId);
   if (!creator) return;
