@@ -383,15 +383,37 @@ try {
   workspace.reportError(error);
 }
 
-function livePlayerMarkup(): string {
-  if (!livePopup) return "";
+let globalLiveHost: HTMLElement | undefined;
+let globalLivePlayerKey = "";
+
+function renderGlobalLivePlayer(): void {
+  if (!livePopup) {
+    globalLiveHost?.remove();
+    globalLiveHost = undefined;
+    globalLivePlayerKey = "";
+    return;
+  }
+
   const creator = allLiveCreators().find(item => item.id === livePopup?.creatorId);
   const source = livePopup ? liveSource(livePopup.creatorId, livePopup.sourceId) : undefined;
-  if (!creator || !source) return "";
+  if (!creator || !source) return;
+
+  const key = `${livePopup.id}:${livePlaybackStatus.generatedAt ?? ""}`;
+  if (globalLiveHost && globalLivePlayerKey === key && document.body.contains(globalLiveHost)) {
+    return;
+  }
+
   const embedUrl = liveEmbedUrl(creator.id, source);
   const state = livePlaybackStatus.sources?.[liveStatusKey(creator.id, source.id)];
   const playbackText = state?.online ? "ОНЛАЙН" : state?.fallbackVideoId ? "ПОСЛЕДНЯЯ ЗАПИСЬ" : "КАНАЛ";
-  return `<section class="global-live-player" aria-label="LIVE player">
+
+  if (!globalLiveHost) {
+    globalLiveHost = document.createElement("section");
+    globalLiveHost.id = "global-live-player";
+    globalLiveHost.className = "global-live-player";
+  }
+
+  globalLiveHost.innerHTML = `
     <div class="global-live-player-head">
       <div><strong>LIVE · ${escapeHtml(creator.name)}</strong><span>${escapeHtml(source.label)} · ${playbackText}</span></div>
       <button id="global-live-close" type="button" aria-label="Закрыть LIVE player">×</button>
@@ -399,16 +421,20 @@ function livePlayerMarkup(): string {
     <div class="global-live-video">${embedUrl
       ? `<iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(creator.name)} — ${escapeHtml(source.label)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`
       : `<div class="global-live-fallback">Плеер временно недоступен.</div>`}
-    </div>
-  </section>`;
+    </div>`;
+
+  globalLivePlayerKey = key;
+  if (!document.body.contains(globalLiveHost)) mount.prepend(globalLiveHost);
+  globalLiveHost.querySelector("#global-live-close")?.addEventListener("click", () => closeLivePopup());
 }
 
 function render(): void {
   const state = workspace.getState();
   document.body.dataset.platformView = state.view;
   const diagnostics = host.getDiagnostics();
-  mount.innerHTML = `<main class="workspace"><div class="developer-ui-shell">${developerUiVisible ? `<header class="topbar"><div><span class="eyebrow">FREEzzz</span><h1>Platform</h1></div><span class="state state-${state.status}">${state.status.toUpperCase()}</span></header><nav class="nav">${views.map(viewName => `<button class="${state.view === viewName ? "active" : ""}" data-view="${viewName}" type="button">${labels[viewName]}</button>`).join("")}</nav>${state.lastError ? `<div class="error" role="alert"><span>${escapeHtml(state.lastError)}</span><button id="clear-error" type="button">Dismiss</button></div>` : ""}` : ""}${livePlayerMarkup()}${view(state.view)}${developerUiVisible ? `<footer class="developer-ui-shell"><span class="muted">Target ${diagnostics.manifest.target} · ${host.getStatus()}</span><div class="footer-actions"><button id="persist" type="button">Save session</button><button id="restart" type="button">Restart</button></div></footer>` : ""}</div><button id="developer-ui-toggle" class="developer-ui-toggle" type="button" aria-pressed="${developerUiVisible}" aria-label="${developerUiVisible ? "Скрыть интерфейс разработчика" : "Показать интерфейс разработчика"}">${developerUiVisible ? "DEV · ON" : "DEV · OFF"}</button></main>`;
-  document.querySelectorAll<HTMLButtonElement>("[data-view]").forEach(button => button.onclick = () => { workspace.navigate(button.dataset.view as PlatformWorkspaceView); persistSession(); render(); });
+  mount.innerHTML = `<main class="workspace"><div class="developer-ui-shell">${developerUiVisible ? `<header class="topbar"><div><span class="eyebrow">FREEzzz</span><h1>Platform</h1></div><span class="state state-${state.status}">${state.status.toUpperCase()}</span></header><nav class="nav">${views.map(viewName => `<button class="${state.view === viewName ? "active" : ""}" data-view="${viewName}" type="button">${labels[viewName]}</button>`).join("")}</nav>${state.lastError ? `<div class="error" role="alert"><span>${escapeHtml(state.lastError)}</span><button id="clear-error" type="button">Dismiss</button></div>` : ""}` : ""}${view(state.view)}${developerUiVisible ? `<footer class="developer-ui-shell"><span class="muted">Target ${diagnostics.manifest.target} · ${host.getStatus()}</span><div class="footer-actions"><button id="persist" type="button">Save session</button><button id="restart" type="button">Restart</button></div></footer>` : ""}</div><button id="developer-ui-toggle" class="developer-ui-toggle" type="button" aria-pressed="${developerUiVisible}" aria-label="${developerUiVisible ? "Скрыть интерфейс разработчика" : "Показать интерфейс разработчика"}">${developerUiVisible ? "DEV · ON" : "DEV · OFF"}</button></main>`;
+  renderGlobalLivePlayer();
+    document.querySelectorAll<HTMLButtonElement>("[data-view]").forEach(button => button.onclick = () => { workspace.navigate(button.dataset.view as PlatformWorkspaceView); persistSession(); render(); });
   document.querySelector("#clear-error")?.addEventListener("click", () => { workspace.clearError(); render(); });
   document.querySelector("#global-live-close")?.addEventListener("click", () => closeLivePopup());
   document.querySelector("#persist")?.addEventListener("click", () => { persistSession(); render(); });
