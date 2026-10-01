@@ -254,14 +254,25 @@ function liveStatusKey(creatorId: string, sourceId: string): string {
 }
 function liveEmbedUrl(creatorId: string, source: LiveSource): string | undefined {
   const status = livePlaybackStatus.sources?.[liveStatusKey(creatorId, source.id)];
+
+  // Explicit video sources are pinned and do not use channel status.
   if (source.kind === "youtube" && source.videoId) {
     return "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(source.videoId) + "?" +
       new URLSearchParams({ autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString();
   }
-  if (source.kind === "youtube" && source.youtubeHandle) {
-    return "https://www.youtube-nocookie.com/embed?" +
-      new URLSearchParams({ listType: "user_uploads", list: source.youtubeHandle, autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString();
+
+  // Status cache is the source of truth: ONLINE -> current broadcast,
+  // OFFLINE -> exact latest completed stream recording.
+  if (status?.online && status.liveVideoId) {
+    if (source.kind === "youtube") {
+      return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(status.liveVideoId)}?${new URLSearchParams({ autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString()}`;
+    }
+    if (source.kind === "twitch") {
+      const parent = window.location.hostname || "freezzgames.github.io";
+      return `https://player.twitch.tv/?${new URLSearchParams({ video: `v${status.liveVideoId}`, parent, autoplay: "true", muted: "true" }).toString()}`;
+    }
   }
+
   if (status && !status.online && status.fallbackVideoId) {
     if (source.kind === "twitch") {
       const parent = window.location.hostname || "freezzgames.github.io";
@@ -271,15 +282,15 @@ function liveEmbedUrl(creatorId: string, source: LiveSource): string | undefined
       return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(status.fallbackVideoId)}?${new URLSearchParams({ autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString()}`;
     }
   }
+
+  // Before the first status refresh, keep the provider channel as a safe fallback.
   if (source.kind === "twitch" && source.channel) {
     const parent = window.location.hostname || "freezzgames.github.io";
     return `https://player.twitch.tv/?${new URLSearchParams({ channel: source.channel, parent, autoplay: "true", muted: "true" }).toString()}`;
   }
-  if (source.kind === "youtube" && source.channel) {
-    if (status?.online && status.liveVideoId) {
-      return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(status.liveVideoId)}?${new URLSearchParams({ autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString()}`;
-    }
-    return `https://www.youtube-nocookie.com/embed/live_stream?${new URLSearchParams({ channel: source.channel, autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString()}`;
+  if (source.kind === "youtube" && (source.channel || source.youtubeHandle)) {
+    const channel = source.channel || source.youtubeHandle;
+    return `https://www.youtube-nocookie.com/embed/live_stream?${new URLSearchParams({ channel: channel!, autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString()}`;
   }
   return undefined;
 }
@@ -303,6 +314,10 @@ function openLivePopup(creatorId: string, sourceId: string): void {
   selectedLiveCreatorId = creatorId;
   selectedLiveSourceId = sourceId;
   render();
+
+  // Refresh status whenever a channel is opened so OFFLINE can switch to its
+  // latest recorded stream without waiting for the next page load.
+  void loadLivePlaybackStatus();
 }
 function closeLivePopup(popupId?: string): void {
   if (popupId && livePopup?.id !== popupId) return;
