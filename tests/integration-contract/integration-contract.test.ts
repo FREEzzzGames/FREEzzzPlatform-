@@ -9,7 +9,8 @@ describe("release integration contract", () => {
   it("keeps the canonical repository workflows", () => {
     expect(read(".github/workflows/ci.yml")).toContain('branches: ["**"]');
     expect(read(".github/workflows/pages.yml")).toContain('branches: ["main"]');
-    expect(read(".github/workflows/live-status.yml")).toContain("web/live-status.json");
+    expect(read(".github/workflows/pages.yml")).toContain("npm run refresh:live");
+    expect(read("scripts/refresh-live-status.mjs")).toContain("web/live-status.json");
   });
 
   it("keeps Telegram SDK before the application entrypoint", () => {
