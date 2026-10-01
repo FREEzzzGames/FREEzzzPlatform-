@@ -1,0 +1,63 @@
+name: FREEzzz Integration Smoke
+
+on:
+  workflow_run:
+    workflows: ["FREEzzz Platform Pages"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check deployed Web
+        run: |
+          set -euo pipefail
+          url="https://freezzgames.github.io/FREEzzzPlatform-/"
+          for attempt in $(seq 1 12); do
+            code="$(curl -L -s -o /tmp/pages.html -w '%{http_code}' "$url" || true)"
+            echo "Web attempt $attempt: HTTP $code"
+            if [ "$code" = "200" ] && grep -q 'FREEzzz Platform' /tmp/pages.html; then
+              break
+            fi
+            sleep 10
+          done
+          test -s /tmp/pages.html
+          grep -q 'FREEzzz Platform' /tmp/pages.html
+          grep -q 'telegram.org/js/telegram-web-app.js' /tmp/pages.html
+
+      - name: Check LIVE cache chain
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://freezzgames.github.io/FREEzzzPlatform-/live-status.json?smoke=$GITHUB_RUN_ID" -o /tmp/live-status.json
+          node - <<'NODE'
+          const fs = require("fs");
+          const data = JSON.parse(fs.readFileSync("/tmp/live-status.json", "utf8"));
+          if (!data || typeof data !== "object" || typeof data.generatedAt !== "string") {
+            throw new Error("LIVE cache has invalid shape");
+          }
+          if (!data.sources || typeof data.sources !== "object" || Object.keys(data.sources).length === 0) {
+            throw new Error("LIVE cache contains zero sources");
+          }
+          console.log("LIVE sources:", Object.keys(data.sources).length);
+          NODE
+
+      - name: Check CHAT bridge chain
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://freezzzplatform-chat.onrender.com/api/chat/config?smoke=$GITHUB_RUN_ID" -o /tmp/chat-config.json
+          node - <<'NODE'
+          const fs = require("fs");
+          const data = JSON.parse(fs.readFileSync("/tmp/chat-config.json", "utf8"));
+          if (!data || typeof data !== "object") throw new Error("CHAT config is not an object");
+          if (typeof data.telegramConfigured !== "boolean") throw new Error("CHAT config missing telegramConfigured");
+          if (typeof data.telegramConnected !== "boolean") throw new Error("CHAT config missing telegramConnected");
+          console.log("CHAT bridge responded. Telegram configured:", data.telegramConfigured, "connected:", data.telegramConnected);
+          NODE
+
+      - name: Report connected release
+        run: echo "CONNECTED RELEASE CHECK: PASS"
