@@ -662,13 +662,19 @@ function bind(current: PlatformWorkspaceView): void {
       if (!creator) return;
       selectedLiveCreatorId = creator.id;
       selectedLiveSourceId = creator.sources[0].id;
+      liveDetailCreatorId = creator.id;
       render();
     }));
 
-    document.querySelectorAll<HTMLButtonElement>("[data-live-open-source],[data-live-open-creator]").forEach(button => button.addEventListener("click", () => {
-      const creatorId = button.dataset.liveOpenCreator ?? selectedLiveCreatorId;
-      const creator = allLiveCreators().find(item => item.id === creatorId);
-      const sourceId = button.dataset.liveOpenSource ?? creator?.sources[0]?.id ?? selectedLiveSourceId;
+    document.querySelector("#live-back-list")?.addEventListener("click", () => {
+      liveDetailCreatorId = undefined;
+      render();
+    });
+
+    document.querySelectorAll<HTMLButtonElement>("[data-live-open-source-id]").forEach(button => button.addEventListener("click", () => {
+      const creatorId = button.dataset.liveOpenSource;
+      const creator = creatorId ? allLiveCreators().find(item => item.id === creatorId) : undefined;
+      const sourceId = button.dataset.liveOpenSourceId;
       if (!creator || !sourceId) return;
       selectedLiveCreatorId = creator.id;
       selectedLiveSourceId = sourceId;
@@ -676,6 +682,7 @@ function bind(current: PlatformWorkspaceView): void {
     }));
 
     document.querySelector("#live-add-streamer")?.addEventListener("click", openLiveAddModal);
+
 
     // The picker is the only custom-stream entry point: no URL insertion flow.
 
