@@ -36,6 +36,11 @@ jobs:
           gradle-version: '8.10.2'
       - name: Build debug APK
         run: gradle --no-daemon -p android :app:assembleDebug
+      - name: Verify Android ROM picker
+        run: |
+          grep -q 'onShowFileChooser' android/app/src/main/java/com/freezzz/platform/MainActivity.java
+          grep -q 'ACTION_OPEN_DOCUMENT' android/app/src/main/java/com/freezzz/platform/MainActivity.java
+          grep -q 'FILE_REQUEST' android/app/src/main/java/com/freezzz/platform/MainActivity.java
       - name: Verify APK output
         run: |
           test -s android/app/build/outputs/apk/debug/app-debug.apk
