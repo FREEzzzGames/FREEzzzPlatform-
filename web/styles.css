@@ -153,3 +153,7 @@ footer{display:flex;justify-content:space-between;align-items:center;padding:12p
   .live-popup-video{min-width:0}
   .live-popup-video iframe{max-width:100%}
 }
+
+.live-card-select{min-width:0;flex:1 1 auto;display:flex;align-items:center;gap:9px;text-align:left;border:0;background:transparent;color:inherit;padding:0;cursor:pointer;font:inherit}
+.live-card-select:focus-visible{outline:2px solid #71859a;outline-offset:2px;border-radius:8px}
+.live-card-select .live-card-main{min-width:0}
