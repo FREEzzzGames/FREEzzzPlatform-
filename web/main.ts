@@ -63,6 +63,29 @@ let radioLoading = false;
 let radioError = "";
 let radioRequestId = 0;
 let radioSelectedId = "";
+const liveChannels = [
+  {
+    id: "woodskiy-ded",
+    name: "Вудский Дед",
+    url: "https://www.youtube.com/channel/UCKgQPQj9J3BUgTVci1up75A",
+    embedUrl: "https://www.youtube-nocookie.com/embed/tGMJ59g1Yd0",
+    platform: "YouTube"
+  },
+  {
+    id: "noobfromua",
+    name: "NoobFromUA",
+    url: "https://www.youtube.com/channel/UCfsOfLvadg89Bx8Sv_6WERg",
+    platform: "YouTube"
+  },
+  {
+    id: "smetana",
+    name: "СМЕТАНА",
+    url: "https://www.youtube.com/@smetanaml",
+    embedUrl: "https://www.youtube-nocookie.com/embed/C9j4lS2uO8w",
+    platform: "YouTube"
+  }
+] as const;
+let selectedLiveChannelId = liveChannels[0].id;
 const genesisGamepad = new VirtualGamepad("sega-megadrive-6", (key, action) => genesisPlayer.sendInput(key, action));
 function syncGenesisGamepad(): void {
   const target = document.querySelector<HTMLElement>("#genesis-gamepad");
@@ -138,7 +161,35 @@ function view(current: PlatformWorkspaceView): string {
   if (current === "system") return `<section class="panel"><span class="muted">System</span><h2>Runtime health</h2><div class="status-list"><div>HOST <strong>${host.getStatus()}</strong></div><div>CHAT <strong>${chat.status}</strong></div><div>LIVE <strong>${live.status}</strong></div><div>RADIO <strong>${radio.status}</strong></div><div>LIBRARY <strong>${library.status}</strong></div><div>SESSION <strong>${platformSession.load() ? "RESTORED" : "NEW"}</strong></div></div></section>`;
   if (current === "library") return `<section class="panel"><span class="muted">Library</span><h2>Games</h2><div class="list">${gameCatalog.list().map(game => `<div class="row"><div><strong>${escapeHtml(game.name)}</strong><span>${escapeHtml(game.emulatorId)} · ${escapeHtml(game.version)}</span></div><button data-game-launch="${escapeHtml(game.id)}" type="button">Launch</button></div>`).join("")}</div><div class="game-status"><span>Status: ${gamePlayer.getState().status}</span><span>Frames: ${gamePlayer.getState().frame}</span><div class="actions"><button id="game-save" type="button">Save</button><button id="game-pause" type="button">Pause</button><button id="game-resume" type="button">Resume</button><button id="game-exit" type="button">Exit</button></div></div><canvas id="game-canvas" width="256" height="240" aria-label="Game display"></canvas><hr><span class="muted">Sega Mega Drive / Genesis</span><h2>Mega Drive Collection</h2><p class="muted">Choose a local ROM you are entitled to use. ROM files are never uploaded to the platform.</p><div class="list genesis-library"><div class="row genesis-row"><div><strong>Local Mega Drive ROM</strong><span>Test only · choose a ROM from your own storage</span></div><label class="genesis-file-button">Select ROM<input id="genesis-rom-local" type="file" accept=".md,.gen,.bin,.smd,.mdx"></label></div></div><div id="genesis-status" class="game-status">Sega emulator: idle</div><div id="genesis-player" style="width:100%;min-height:480px;background:#000"></div><div id="genesis-gamepad"></div></section>`;
   if (current === "chat") return `<section class="panel"><span class="muted">CHAT</span><h2>General</h2><div class="chat-log">${chat.store.listMessages("general").map(message => `<div class="chat-message"><strong>${escapeHtml(message.senderId)}</strong><span>${escapeHtml(message.text)}</span><time>${new Date(message.timestamp).toLocaleTimeString()}</time></div>`).join("")}</div><form id="chat-form" class="inline-form"><input id="chat-input" maxlength="500" autocomplete="off" required placeholder="Message"><button type="submit">Send</button></form></section>`;
-  if (current === "live") return `<section class="panel"><span class="muted">LIVE</span><h2>Demo stream</h2><div id="live-player"></div><div class="actions"><button id="live-load" type="button">Load</button><button id="live-play" type="button">Play</button><button id="live-pause" type="button">Pause</button><button id="live-stop" type="button">Stop</button></div></section>`;
+  if (current === "live") {
+    const selected = liveChannels.find(channel => channel.id === selectedLiveChannelId) ?? liveChannels[0];
+    return `<section class="panel live-portal">
+      <span class="muted">LIVE</span>
+      <h2>Стримы</h2>
+      <div class="live-feature">
+        <div class="live-feature-head">
+          <div><strong>${escapeHtml(selected.name)}</strong><span>${escapeHtml(selected.platform)} · ссылка из списка LIVE</span></div>
+          <a class="live-open" href="${escapeHtml(selected.url)}" target="_blank" rel="noopener noreferrer">Открыть канал</a>
+        </div>
+        <div class="live-player-shell">
+          ${selected.embedUrl
+            ? `<iframe src="${escapeHtml(selected.embedUrl)}" title="${escapeHtml(selected.name)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`
+            : `<div class="live-placeholder"><strong>Прямой встроенный плеер недоступен для этого канала</strong><span>Открой канал по кнопке выше.</span></div>`}
+        </div>
+      </div>
+      <div class="live-carousel">
+        ${liveChannels.map(channel => `<button class="live-card ${channel.id === selected.id ? "active" : ""}" data-live-channel="${channel.id}" type="button">
+          <strong>${escapeHtml(channel.name)}</strong>
+          <span>${escapeHtml(channel.platform)}</span>
+        </button>`).join("")}
+      </div>
+      <div class="live-native-player">
+        <span class="muted">Native LIVE adapter test</span>
+        <div id="live-player"></div>
+        <div class="actions"><button id="live-load" type="button">Load test</button><button id="live-play" type="button">Play</button><button id="live-pause" type="button">Pause</button><button id="live-stop" type="button">Stop</button></div>
+      </div>
+    </section>`;
+  }
   return `<section class="panel radio-portal"><span class="muted">PUBLIC RADIO</span><h2>Internet Radio</h2><p>Public internet stations from Radio Browser. Choose a genre, search a station, then press Play.</p><div id="radio-audio-host" class="radio-audio-host"></div><div class="radio-toolbar"><form id="radio-search-form" class="inline-form"><input id="radio-search-input" value="${escapeHtml(radioQuery)}" maxlength="80" autocomplete="off" placeholder="Search station"><button type="submit">Search</button></form></div><div class="radio-genres">${RADIO_GENRES.map(genre=>`<button class="${radioGenre===genre?"active":""}" data-radio-genre="${genre}" type="button">${escapeHtml(genre)}</button>`).join("")}</div><div class="radio-status">${radioLoading?"Loading stations…":radioError?escapeHtml(radioError):radioStations.length+" stations"}</div><div class="list radio-stations">${radioStations.map(station=>`<div class="row radio-station"><div><strong>${escapeHtml(station.name)}</strong><span>${escapeHtml(station.country||"International")} · ${escapeHtml(station.codec||"stream")} · ${station.bitrate||0} kbps</span></div><button data-radio-station="${escapeHtml(station.stationuuid)}" type="button">${radioSelectedId===station.stationuuid?"Playing":"Play"}</button></div>`).join("")}</div><div class="muted">Catalog: Radio Browser · HTTPS streams only</div></section>`;
 }
 
@@ -176,6 +227,10 @@ function bind(current: PlatformWorkspaceView): void {
   }
   if (current === "chat") document.querySelector<HTMLFormElement>("#chat-form")?.addEventListener("submit", event => { event.preventDefault(); const input = document.querySelector<HTMLInputElement>("#chat-input"); if (!input?.value.trim()) return; chat.receive({ id: `m-${Date.now()}`, conversationId: "general", senderId: "user", text: input.value.trim(), timestamp: Date.now() }); persistSession(); render(); });
   if (current === "live") {
+    document.querySelectorAll<HTMLButtonElement>("[data-live-channel]").forEach(button => button.addEventListener("click", () => {
+      selectedLiveChannelId = button.dataset.liveChannel ?? liveChannels[0].id;
+      render();
+    }));
     document.querySelector("#live-load")?.addEventListener("click", () => { try { live.load("demo-stream", "web"); render(); } catch (error) { workspace.reportError(error); render(); } });
     document.querySelector("#live-play")?.addEventListener("click", () => { try { live.play(); } catch (error) { workspace.reportError(error); render(); } });
     document.querySelector("#live-pause")?.addEventListener("click", () => { try { live.pause(); } catch (error) { workspace.reportError(error); render(); } });
