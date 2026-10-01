@@ -18,7 +18,7 @@ import { TelegramWebAppAdapter } from "../telegram-integration/webapp-adapter";
 import { WebStorageAdapter } from "../storage/platform-storage";
 import { RadioBrowserClient, RADIO_GENRES, type RadioBrowserStation } from "./radio-browser";
 import { WebMidiController, midiNoteName } from "./midi-controller";
-import { MIDI_ASSET_CATALOG, type MidiAssetItem } from "./midi-asset-database";
+import { MIDI_ASSET_CATALOG, loadMidiAssetCollection, toggleMidiAssetCollection, type MidiAssetItem } from "./midi-asset-database";
 import { frameAsciiArt, generateAsciiText, type AsciiStyle } from "../ascii-generator/ascii-generator";
 import "./styles.css";
 
@@ -333,6 +333,19 @@ function renderMidiOverlay(): void {
     <section class="midi-surface"><div class="midi-pads">${pads.map(index => `<button class="midi-pad" data-midi-pad="${index}" type="button"><span>${String(index + 1).padStart(2,"0")}</span><strong>PAD</strong></button>`).join("")}</div>
       <div class="midi-knobs">${[21,22,23,24].map((cc,index)=>`<label class="midi-knob"><span>CC ${cc}</span><input data-midi-cc="${cc}" type="range" min="0" max="127" value="${midiController.getCC(cc)}"><output>${midiController.getCC(cc)}</output><b>K${index+1}</b></label>`).join("")}</div>
     </section>
+    <section class="midi-asset-library">
+      <div class="midi-keyboard-label">ASSET LIBRARY · CC0</div>
+      <div class="midi-assets">
+        ${MIDI_ASSET_CATALOG.map((asset: MidiAssetItem) => {
+          const saved = loadMidiAssetCollection().includes(asset.id);
+          return `<button class="midi-asset ${saved ? "active" : ""}" data-midi-asset="${escapeHtml(asset.id)}" type="button">
+            <strong>${escapeHtml(asset.name)}</strong>
+            <span>${escapeHtml(asset.category)} · ${escapeHtml(asset.source)}</span>
+            <small>${saved ? "Added to collection" : "Add to collection"}</small>
+          </button>`;
+        }).join("")}
+      </div>
+    </section>
     <section class="midi-keyboard"><div class="midi-keyboard-label">KEYBOARD</div><div class="midi-keys">${notes.map(note => `<button class="midi-key ${[1,3,6,8,10].includes(note%12) ? "black" : ""} ${midiActiveNotes.has(note) ? "active" : ""}" data-midi-note="${note}" type="button"><span>${midiNoteName(note)}</span></button>`).join("")}</div></section>
   </div>`;
   document.body.append(overlay);
@@ -353,6 +366,12 @@ function renderMidiOverlay(): void {
     button.addEventListener("pointerdown", () => { midiController.noteOn(36 + midiPadBank * 16 + index, 110); button.classList.add("active"); });
     button.addEventListener("pointerup", () => { midiController.noteOff(36 + midiPadBank * 16 + index); button.classList.remove("active"); });
     button.addEventListener("pointerleave", () => { if (button.classList.contains("active")) { midiController.noteOff(36 + midiPadBank * 16 + index); button.classList.remove("active"); } });
+  });
+  document.querySelectorAll<HTMLButtonElement>("[data-midi-asset]").forEach(button => {
+    button.addEventListener("click", () => {
+      toggleMidiAssetCollection(button.dataset.midiAsset ?? "");
+      renderMidiOverlay();
+    });
   });
   document.querySelectorAll<HTMLInputElement>("[data-midi-cc]").forEach(input => input.addEventListener("input", event => {
     const target = event.target as HTMLInputElement;
