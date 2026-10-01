@@ -49,7 +49,7 @@ export class WebLiveAdapter implements LivePlayerAdapter {
 class WebRadioPlayer implements RadioPlayer {
   readonly id="web-audio"; readonly version="1.0.0"; readonly target="web" as const;
   private audio?:HTMLAudioElement; private stationId?:string; private status:"idle"|"loading"|"playing"|"paused"|"stopped"|"failed"="idle"; private updatedAt=Date.now();
-  initialize(){this.audio=new Audio();this.audio.preload="none";this.audio.addEventListener("play",()=>{this.status="playing";this.updatedAt=Date.now();});this.audio.addEventListener("pause",()=>{if(this.status==="playing")this.status="paused";this.updatedAt=Date.now();});this.audio.addEventListener("error",()=>{this.status="failed";this.updatedAt=Date.now();});}
+  initialize(){this.audio=new Audio();this.audio.controls=true;this.audio.preload="none";this.audio.setAttribute("aria-label","Radio player");const host=document.querySelector<HTMLElement>("#radio-audio-host");if(host)host.append(this.audio);this.audio.addEventListener("play",()=>{this.status="playing";this.updatedAt=Date.now();});this.audio.addEventListener("pause",()=>{if(this.status==="playing")this.status="paused";this.updatedAt=Date.now();});this.audio.addEventListener("error",()=>{this.status="failed";this.updatedAt=Date.now();});}
   load(station:RadioStation){if(!this.audio)throw new Error("RADIO player is not initialized.");this.stationId=station.id;this.status="loading";this.updatedAt=Date.now();this.audio.src=station.stream;}
   play(){if(!this.audio)throw new Error("RADIO player is not initialized.");void this.audio.play().catch(()=>{this.status="failed";this.updatedAt=Date.now();});}
   pause(){this.audio?.pause();this.status="paused";this.updatedAt=Date.now();}
