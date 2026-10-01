@@ -374,3 +374,55 @@ img,video,iframe,canvas,svg{max-width:100%}
   .developer-ui-toggle-inline{padding:7px 8px;font-size:8px}
   .topbar .state{flex:0 0 auto}
 }
+/* LIVE REWORK — simple streamer list + detail menu */
+.live-list-view,.live-detail-view{scroll-behavior:smooth}
+.live-list-head,.live-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.live-list-head>div,.live-detail-copy{min-width:0}
+.live-list-head h2{margin:4px 0}
+.live-list-head p{margin:0;color:#7f8999;font-size:13px}
+.live-simple-list{display:flex;flex-direction:column;gap:7px;max-height:min(68dvh,680px);overflow-y:auto;overflow-x:hidden;padding-right:2px;scroll-behavior:smooth;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.live-simple-row{width:100%;min-height:64px;display:flex;align-items:center;gap:12px;border:0;border-bottom:1px solid #242b35;background:transparent;color:#e8edf4;text-align:left;padding:10px 4px;cursor:pointer;font:inherit;transition:background .18s ease,transform .18s ease}
+.live-simple-row:hover,.live-simple-row:focus-visible{background:#111821;border-radius:9px;outline:none}
+.live-simple-row:active{transform:scale(.995)}
+.live-simple-main{min-width:0;display:flex;flex-direction:column;gap:3px;flex:1}
+.live-simple-main strong{font-size:16px;overflow-wrap:anywhere}
+.live-simple-main span{color:#8995a5;font-size:12px;overflow-wrap:anywhere}
+.live-simple-main small{color:#667384;font-size:10px;overflow-wrap:anywhere}
+.live-simple-arrow{font-size:27px;color:#667487;line-height:1;flex:0 0 auto}
+.live-back-button,.live-add-button{min-height:44px;border:1px solid #394657;border-radius:9px;background:#141b24;color:#e9eef5;padding:9px 12px;cursor:pointer;font:inherit}
+.live-back-button:hover,.live-add-button:hover{background:#1b2530}
+.live-detail-profile{display:flex;align-items:flex-start;gap:14px;padding:4px 0 18px;border-bottom:1px solid #242b35}
+.live-detail-copy h2{margin:4px 0;font-size:clamp(28px,7vw,42px)}
+.live-detail-copy>span{color:#8b97a7;font-size:12px}
+.live-detail-copy p{margin:10px 0 0;color:#8d98a8;line-height:1.55;font-size:13px}
+.live-detail-status{display:flex;justify-content:space-between;gap:12px;padding:15px 0 9px;color:#dbe3ec}
+.live-detail-status span{color:#738093;font:10px ui-monospace,SFMono-Regular,Menlo,monospace;text-align:right}
+.live-source-menu{display:flex;flex-direction:column;gap:7px;max-height:300px;overflow:auto;scroll-behavior:smooth;overscroll-behavior:contain}
+.live-source-action{min-height:56px;width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #29323e;border-radius:10px;background:#0e141c;color:#dfe7ef;padding:10px 12px;text-align:left;cursor:pointer;transition:border-color .18s ease,background .18s ease}
+.live-source-action span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.live-source-action small{color:#778396;font:9px ui-monospace,SFMono-Regular,Menlo,monospace}
+.live-source-action b{font-size:17px;font-weight:500}
+.live-source-action.active,.live-source-action:hover,.live-source-action:focus-visible{border-color:#65768b;background:#18212c;outline:none}
+.live-detail-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.live-watch-primary{min-height:46px;border:1px solid #60758a;border-radius:9px;background:#1a2633;color:#fff;padding:10px 15px;cursor:pointer;font:inherit}
+.live-remove-detail{min-height:44px;border:1px solid #4a3438;border-radius:9px;background:#171216;color:#c9aeb2;padding:9px 12px;cursor:pointer;font:inherit}
+.live-detail-view{animation:live-detail-in .2s ease both}
+@keyframes live-detail-in{from{opacity:.7;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* LIVE playback — keep the existing popup/player mechanics, remove video-frame chrome */
+.global-live-player{border:0!important;border-radius:0!important;box-shadow:none!important}
+.global-live-video{border:0!important;border-radius:0!important}
+.global-live-video iframe{border:0!important;border-radius:0!important}
+.live-popup,.live-popup-video,.live-popup-video iframe{border:0!important;border-radius:0!important;box-shadow:none!important}
+.global-live-player{animation:live-player-in .18s ease both}
+@keyframes live-player-in{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){
+  .live-detail-view,.global-live-player,.live-simple-row,.live-source-action{animation:none!important;transition:none!important}
+}
+@media(max-width:650px){
+  .live-list-head,.live-detail-head{align-items:flex-start}
+  .live-list-head p{max-width:280px}
+  .live-simple-list{max-height:65dvh}
+  .live-detail-profile{gap:11px}
+  .live-detail-actions>*{flex:1 1 100%}
+}
