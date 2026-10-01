@@ -246,7 +246,6 @@ async function playRadioStation(stationId: string): Promise<void> {
   radio.load(`rb-${station.stationuuid}`, "web");
   radio.play();
   void radioBrowser.registerClick(station.stationuuid);
-  render();
 }
 
 function drawGameFrame(): void {
