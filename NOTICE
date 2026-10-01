@@ -36,3 +36,10 @@ They are referenced only for identification and compatibility purposes.
 5. NO IMPLIED LICENSE
 Nothing in this repository grants rights to third-party copyrighted games,
 ROM images, music, graphics, trademarks, or other proprietary materials.
+
+
+6. RADIO BROWSER
+FREEzzz Platform uses the public Radio Browser API as a directory of internet
+radio stations. Station metadata and stream URLs remain provided by the
+Radio Browser service and by the individual station operators. The platform
+does not claim ownership of those stations, logos, streams, or broadcasts.
