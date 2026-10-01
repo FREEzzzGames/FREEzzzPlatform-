@@ -6,6 +6,7 @@ const requiredFiles = [
   ".github/workflows/ci.yml",
   ".github/workflows/pages.yml",
   ".github/workflows/live-status.yml",
+  ".github/workflows/integration-smoke.yml",
   "web/index.html",
   "web/main.ts",
   "web/live-status.json",
