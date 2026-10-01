@@ -33,3 +33,29 @@ footer{display:flex;justify-content:space-between;align-items:center;padding:12p
 @media(max-width:760px){.radio-heading{flex-direction:column}.midi-overlay{padding:8px}.midi-controller{padding:12px}.midi-surface{grid-template-columns:1fr}.midi-pads{grid-template-columns:repeat(4,1fr)}.midi-knobs{grid-template-columns:repeat(2,1fr)}.midi-toolbar select{width:100%}.midi-keys{min-width:620px}}
 
 .ascii-generator{display:flex;flex-direction:column;gap:18px}.ascii-generator h2{margin-bottom:6px}.ascii-controls{display:grid;grid-template-columns:minmax(0,1fr) 160px auto auto;gap:8px;align-items:end}.ascii-controls label{display:flex;flex-direction:column;gap:6px;color:#7f8999;font-size:11px}.ascii-controls input,.ascii-controls select{border:1px solid #394252;background:#0c1118;color:#eef2f8;padding:10px 12px;border-radius:8px;min-width:0}.ascii-controls button{border:1px solid #394252;background:#161c26;color:#eef2f8;padding:10px 13px;border-radius:8px;cursor:pointer}.ascii-output{margin:0;min-height:150px;overflow:auto;padding:18px;border:1px solid #29313d;border-radius:10px;background:#070a0f;color:#dfe7f1;font:10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre}.ascii-output:empty{display:none}@media(max-width:760px){.ascii-controls{grid-template-columns:1fr 1fr}.ascii-controls label:first-child{grid-column:1/-1}.ascii-controls button{width:100%}.ascii-output{font-size:7px}}
+
+/* RADIO — Vynora-inspired station carousel, isolated to RADIO */
+.radio-feature{margin:18px 0 20px;border:1px solid #29313d;border-radius:16px;background:linear-gradient(180deg,#111824,#0c1118);padding:14px;overflow:hidden}
+.radio-carousel{overflow:hidden;touch-action:pan-y;user-select:none}
+.radio-carousel-track{display:flex;align-items:stretch;justify-content:center;gap:10px;min-height:174px;padding:12px 0;transition:transform .28s ease}
+.radio-carousel-card{flex:0 0 min(24%,210px);min-height:150px;border:1px solid #2e3745;border-radius:14px;background:#10161f;color:#aeb7c6;padding:16px;text-align:left;display:flex;flex-direction:column;justify-content:flex-end;gap:7px;cursor:pointer;transform:scale(.9);opacity:.55;transition:transform .22s ease,opacity .22s ease,border-color .22s ease,background .22s ease;overflow:hidden}
+.radio-carousel-card strong{font-size:17px;line-height:1.2;color:#dce3ed;overflow-wrap:anywhere}
+.radio-carousel-card span{font-size:11px;color:#737e8f}
+.radio-carousel-card .radio-card-country{text-transform:uppercase;letter-spacing:.1em}
+.radio-carousel-card.active{flex-basis:min(34%,300px);transform:scale(1);opacity:1;border-color:#66758b;background:#1a222d;box-shadow:0 16px 36px rgba(0,0,0,.25)}
+.radio-carousel-card.active strong{font-size:20px;color:#fff}
+.radio-now-playing{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 4px 4px;border-top:1px solid #29313d}
+.radio-now-playing h3{margin:5px 0 3px;font-size:22px;overflow-wrap:anywhere}
+.radio-now-playing p{margin:0;color:#7f8999;font-size:12px}
+.radio-player-controls{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.radio-player-controls button{border:1px solid #465264;background:#17202b;color:#eef2f8;padding:10px 14px;border-radius:9px;cursor:pointer}
+.radio-player-controls button:disabled{opacity:.35;cursor:default}
+.radio-audio-host audio{display:block;width:100%;height:42px}
+.radio-station.selected{border-color:#53657b;background:#151d28}
+@media(max-width:760px){
+  .radio-carousel-track{justify-content:flex-start;min-height:160px}
+  .radio-carousel-card{flex-basis:42%;min-height:136px}
+  .radio-carousel-card.active{flex-basis:58%}
+  .radio-now-playing{align-items:flex-start;flex-direction:column}
+  .radio-player-controls{width:100%;justify-content:flex-start}
+}
