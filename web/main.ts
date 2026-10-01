@@ -8,7 +8,7 @@ import { RadioModule } from "../radio-module/radio-module";
 import { LibraryModule } from "../library-module/library-module";
 import { installWebModuleAdapters } from "../module-adapters/module-adapters";
 import { GameCatalog } from "../game-catalog/game-catalog";
-import { GameContentRegistry, GameContentResolver, MemoryGameContentSource, sha256 } from "../content-layer/content-layer";
+import { GameContentRegistry, GameContentResolver, MemoryGameContentSource } from "../content-layer/content-layer";
 import { GameRuntime } from "../game-runtime/game-runtime";
 import { WebGamePlayer } from "../web-game-player/web-game-player";
 import { GameLibraryProjection } from "../game-library/game-library";
@@ -44,13 +44,9 @@ const mount = (() => {
   return element;
 })();
 
-const gameBytes = new Uint8Array([0xea, 0xea, 0x4c, 0x00, 0x80]);
 const contentSource = new MemoryGameContentSource();
 const contentRegistry = new GameContentRegistry();
-contentSource.register({ id: "platform-demo-rom", gameId: "platform-demo-game", kind: "rom", version: "1.0.0", size: gameBytes.length, checksum: sha256(gameBytes) }, gameBytes);
-contentRegistry.register({ gameId: "platform-demo-game", version: "1.0.0", emulatorId: "nes", entryContentId: "platform-demo-rom", requiredContent: [] });
 const gameCatalog = new GameCatalog();
-gameCatalog.register({ id: "platform-demo-game", name: "Platform Demo", version: "1.0.0", emulatorId: "nes", content: contentRegistry.get("platform-demo-game")! });
 const gamePlayer = new WebGamePlayer(gameCatalog, new GameRuntime({ content: new GameContentResolver(contentRegistry, contentSource) }));
 const radioBrowser = new RadioBrowserClient();
 let radioStations: readonly RadioBrowserStation[] = [];
