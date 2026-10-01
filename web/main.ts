@@ -56,7 +56,10 @@ let radioQuery = "";
 let radioLoading = false;
 let radioError = "";
 let radioRequestId = 0;
-let radioSelectedId = "";
+let radioSelectedId = (() => {
+  try { return localStorage.getItem("freezzz:radio:selected") ?? ""; } catch { return ""; }
+})();
+let radioPlaybackStatus: "idle" | "loading" | "playing" | "paused" | "stopped" | "failed" = "idle";
 const midiController = new WebMidiController();
 let midiOutputs: readonly { id: string; name: string; manufacturer?: string }[] = [];
 let midiError = "";
@@ -171,7 +174,53 @@ function view(current: PlatformWorkspaceView): string {
       </div>
     </section>`;
   }
-  return `<section class="panel radio-portal"><span class="muted">PUBLIC RADIO</span><div class="radio-heading"><div><h2>Internet Radio</h2><p>Public internet stations from Radio Browser. Choose a genre, search a station, then press Play.</p></div><button id="open-midi" class="midi-open-button" type="button">♫ MIDI Controller</button></div><div id="radio-audio-host" class="radio-audio-host"></div><div class="radio-toolbar"><form id="radio-search-form" class="inline-form"><input id="radio-search-input" value="${escapeHtml(radioQuery)}" maxlength="80" autocomplete="off" placeholder="Search station"><button type="submit">Search</button></form></div><div class="radio-genres">${RADIO_GENRES.map(genre=>`<button class="${radioGenre===genre?"active":""}" data-radio-genre="${genre}" type="button">${escapeHtml(genre)}</button>`).join("")}</div><div class="radio-status">${radioLoading?"Loading stations…":radioError?escapeHtml(radioError):radioStations.length+" stations"}</div><div class="list radio-stations">${radioStations.map(station=>`<div class="row radio-station"><div><strong>${escapeHtml(station.name)}</strong><span>${escapeHtml(station.country||"International")} · ${escapeHtml(station.codec||"stream")} · ${station.bitrate||0} kbps</span></div><button data-radio-station="${escapeHtml(station.stationuuid)}" type="button">${radioSelectedId===station.stationuuid?"Playing":"Play"}</button></div>`).join("")}</div><div class="muted">Catalog: Radio Browser · HTTPS streams only</div></section>`;
+  const selectedStation = radioStations.find(station => station.stationuuid === radioSelectedId) ?? radioStations[0];
+  const selectedIndex = selectedStation ? radioStations.findIndex(station => station.stationuuid === selectedStation.stationuuid) : -1;
+  const carouselCards = selectedStation && selectedIndex >= 0 && radioStations.length
+    ? Array.from({ length: Math.min(5, radioStations.length) }, (_, offset) => {
+        const half = Math.floor(Math.min(5, radioStations.length) / 2);
+        const index = (selectedIndex + offset - half + radioStations.length) % radioStations.length;
+        return radioStations[index];
+      })
+    : [];
+  return `<section class="panel radio-portal">
+    <div class="radio-heading">
+      <div><span class="muted">FREEzzz RADIO</span><h2>Internet Radio</h2><p>Live station browser with the active station centered. Swipe or select a neighboring card.</p></div>
+      <button id="open-midi" class="midi-open-button" type="button">♫ MIDI Controller</button>
+    </div>
+    <div class="radio-feature">
+      <div class="radio-carousel" id="radio-carousel" aria-label="Radio station carousel">
+        <div class="radio-carousel-track" id="radio-carousel-track">
+          ${carouselCards.map(station => {
+            const active = station.stationuuid === selectedStation?.stationuuid;
+            return `<button class="radio-carousel-card ${active ? "active" : ""}" data-radio-carousel-id="${escapeHtml(station.stationuuid)}" type="button">
+              <span class="radio-card-country">${escapeHtml(station.country || "International")}</span>
+              <strong>${escapeHtml(station.name)}</strong>
+              <span>${escapeHtml(station.codec || "stream")} · ${station.bitrate || 0} kbps</span>
+            </button>`;
+          }).join("")}
+        </div>
+      </div>
+      <div class="radio-now-playing">
+        <div>
+          <span class="muted">NOW PLAYING</span>
+          <h3>${selectedStation ? escapeHtml(selectedStation.name) : "Choose a station"}</h3>
+          <p>${selectedStation ? escapeHtml(selectedStation.country || "International") + " · " + escapeHtml(selectedStation.tags || "radio") : "Load a genre or search above."}</p>
+        </div>
+        <div class="radio-player-controls">
+          <button id="radio-play" type="button" ${selectedStation ? "" : "disabled"}>${radioPlaybackStatus === "playing" ? "Playing" : "Play"}</button>
+          <button id="radio-pause" type="button" ${radioPlaybackStatus === "playing" ? "" : "disabled"}>Pause</button>
+          <button id="radio-stop" type="button" ${radioPlaybackStatus !== "idle" && radioPlaybackStatus !== "stopped" ? "" : "disabled"}>Stop</button>
+        </div>
+      </div>
+    </div>
+    <div id="radio-audio-host" class="radio-audio-host"></div>
+    <div class="radio-toolbar"><form id="radio-search-form" class="inline-form"><input id="radio-search-input" value="${escapeHtml(radioQuery)}" maxlength="80" autocomplete="off" placeholder="Search station"><button type="submit">Search</button></form></div>
+    <div class="radio-genres">${RADIO_GENRES.map(genre=>`<button class="${radioGenre===genre?"active":""}" data-radio-genre="${genre}" type="button">${escapeHtml(genre)}</button>`).join("")}</div>
+    <div class="radio-status">${radioLoading?"Loading stations…":radioError?escapeHtml(radioError):radioStations.length+" stations"}</div>
+    <div class="list radio-stations">${radioStations.map(station=>`<div class="row radio-station ${radioSelectedId===station.stationuuid?"selected":""}"><div><strong>${escapeHtml(station.name)}</strong><span>${escapeHtml(station.country||"International")} · ${escapeHtml(station.codec||"stream")} · ${station.bitrate||0} kbps</span></div><button data-radio-station="${escapeHtml(station.stationuuid)}" type="button">${radioSelectedId===station.stationuuid && radioPlaybackStatus==="playing"?"Playing":"Play"}</button></div>`).join("")}</div>
+    <div class="muted">Catalog: Radio Browser · HTTPS streams only · selected station is saved locally</div>
+  </section>`;
 }
 
 function bind(current: PlatformWorkspaceView): void {
@@ -209,9 +258,33 @@ function bind(current: PlatformWorkspaceView): void {
       radioQuery = "";
       void loadRadioStations();
     }));
-    document.querySelectorAll<HTMLButtonElement>("[data-radio-station]").forEach(button => button.addEventListener("click", () => {
-      void playRadioStation(button.dataset.radioStation ?? "");
+    document.querySelectorAll<HTMLButtonElement>("[data-radio-station], [data-radio-carousel-id]").forEach(button => button.addEventListener("click", () => {
+      const id = button.dataset.radioStation ?? button.dataset.radioCarouselId ?? "";
+      if (id) {
+        radioSelectedId = id;
+        try { localStorage.setItem("freezzz:radio:selected", id); } catch {}
+        render();
+      }
     }));
+    document.querySelector("#radio-play")?.addEventListener("click", () => { void playRadioStation(radioSelectedId); });
+    document.querySelector("#radio-pause")?.addEventListener("click", () => {
+      try { radio.pause(); radioPlaybackStatus = "paused"; render(); } catch (error) { workspace.reportError(error); render(); }
+    });
+    document.querySelector("#radio-stop")?.addEventListener("click", () => {
+      try { radio.stopPlayback(); radioPlaybackStatus = "stopped"; render(); } catch (error) { workspace.reportError(error); render(); }
+    });
+    const carousel = document.querySelector<HTMLElement>("#radio-carousel-track");
+    let swipeStartX = 0;
+    carousel?.addEventListener("pointerdown", event => { swipeStartX = event.clientX; });
+    carousel?.addEventListener("pointerup", event => {
+      const dx = event.clientX - swipeStartX;
+      if (Math.abs(dx) < 45 || radioStations.length < 2) return;
+      const currentIndex = Math.max(0, radioStations.findIndex(station => station.stationuuid === radioSelectedId));
+      const nextIndex = (currentIndex + (dx < 0 ? 1 : -1) + radioStations.length) % radioStations.length;
+      radioSelectedId = radioStations[nextIndex].stationuuid;
+      try { localStorage.setItem("freezzz:radio:selected", radioSelectedId); } catch {}
+      render();
+    });
     document.querySelector("#open-midi")?.addEventListener("click", () => { renderMidiOverlay(); });
     if (!radioStations.length && !radioLoading && !radioError) void loadRadioStations();
   }
@@ -226,6 +299,12 @@ async function loadRadioStations(): Promise<void> {
     const stations = await radioBrowser.searchStations({ genre: radioGenre, query: radioQuery, limit: 30 });
     if (requestId !== radioRequestId) return;
     radioStations = stations;
+    if (radioSelectedId && stations.some(station => station.stationuuid === radioSelectedId)) {
+      // Keep the saved station when it is still present in the current result.
+    } else if (stations[0]) {
+      radioSelectedId = stations[0].stationuuid;
+      try { localStorage.setItem("freezzz:radio:selected", radioSelectedId); } catch {}
+    }
   } catch (error) {
     if (requestId !== radioRequestId) return;
     radioStations = [];
@@ -343,9 +422,13 @@ async function playRadioStation(stationId: string): Promise<void> {
     if (!(error instanceof Error && error.message.includes("already exists"))) throw error;
   }
   radioSelectedId = station.stationuuid;
+  try { localStorage.setItem("freezzz:radio:selected", radioSelectedId); } catch {}
+  radioPlaybackStatus = "loading";
   radio.load(`rb-${station.stationuuid}`, "web");
   radio.play();
+  radioPlaybackStatus = "playing";
   void radioBrowser.registerClick(station.stationuuid);
+  render();
 }
 
 function drawGameFrame(): void {
