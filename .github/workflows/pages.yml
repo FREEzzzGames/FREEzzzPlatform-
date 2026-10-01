@@ -54,6 +54,8 @@ jobs:
           path: ./dist
 
   deploy:
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -74,10 +76,12 @@ jobs:
     needs: deploy
     steps:
       - name: Check deployed portal
+        env:
+          DEPLOYED_URL: ${{ needs.deploy.outputs.page_url }}
         run: |
           set -euo pipefail
-          url="https://freezzgames.github.io/FREEzzzPlatform-/"
-          for attempt in 1 2 3 4 5 6; do
+          url="${DEPLOYED_URL:-https://freezzgames.github.io/FREEzzzPlatform-/}"
+          for attempt in $(seq 1 18); do
             code="$(curl -L -s -o /tmp/pages.html -w '%{http_code}' "$url" || true)"
             echo "Attempt $attempt: HTTP $code"
             if [ "$code" = "200" ] && grep -q 'FREEzzz Platform' /tmp/pages.html; then
