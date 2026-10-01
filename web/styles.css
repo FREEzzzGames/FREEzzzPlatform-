@@ -259,3 +259,36 @@ img,video,iframe,canvas{max-width:100%}
 @media(min-width:1200px){
   .workspace{padding-left:24px;padding-right:24px}
 }
+
+
+/* LIVE STREAM PICKER + 2/3/4 PLAYER LAYOUT */
+.live-add-dialog{width:min(760px,100%);max-height:min(86vh,760px);overflow:hidden}
+.live-streamer-list{display:grid;gap:7px;max-height:calc(min(86vh,760px) - 105px);overflow:auto;padding-right:2px}
+.live-streamer-row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:10px;border:1px solid #293442;border-radius:10px;background:#101720;padding:9px}
+.live-streamer-row:hover{border-color:#4f6074;background:#141d27}
+.live-streamer-avatar{width:40px;height:40px;display:grid;place-items:center;border-radius:9px;background:#1a2531;border:1px solid #3a4858;color:#e8eef6;font:700 10px ui-monospace,SFMono-Regular,Menlo,monospace}
+.live-streamer-info{min-width:0;display:flex;flex-direction:column;gap:2px}
+.live-streamer-info strong{color:#edf2f8;font-size:13px;overflow-wrap:anywhere}
+.live-streamer-info span,.live-streamer-info small{color:#748194;font-size:9px;overflow-wrap:anywhere}
+.live-streamer-actions{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap}
+.live-streamer-actions button{border:1px solid #3b4a5c;background:#151e28;color:#dfe7ef;border-radius:7px;padding:7px 9px;font-size:10px;cursor:pointer;white-space:nowrap}
+.live-streamer-actions button:hover{background:#202c39;border-color:#617287}
+.live-streamer-actions .live-stream-add{border-color:#5b7085;background:#1a2936;color:#fff}
+.live-popup-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1199px){
+  .live-popup-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:900px){
+  .live-popup-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:650px){
+  .live-streamer-row{grid-template-columns:36px minmax(0,1fr)}
+  .live-streamer-avatar{width:36px;height:36px}
+  .live-streamer-actions{grid-column:1 / -1;justify-content:flex-start}
+  .live-streamer-actions button{flex:1 1 auto}
+  .live-popup-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:480px){
+  .live-popup-grid{grid-template-columns:1fr}
+  .live-add-dialog{max-height:90vh}
+}
