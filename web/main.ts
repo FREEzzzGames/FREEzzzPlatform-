@@ -19,6 +19,7 @@ import { WebStorageAdapter } from "../storage/platform-storage";
 import { RadioBrowserClient, RADIO_GENRES, type RadioBrowserStation } from "./radio-browser";
 import { WebMidiController, midiNoteName } from "./midi-controller";
 import { MIDI_ASSET_CATALOG, loadMidiAssetCollection, toggleMidiAssetCollection, type MidiAssetItem } from "./midi-asset-database";
+import { MIDI_SOUND_PRESETS, MIDI_UI_SOUND_CATALOG, loadMidiPresetId, saveMidiPresetId, loadMidiUiSoundId, saveMidiUiSoundId } from "./midi-presets";
 import { frameAsciiArt, generateAsciiText, type AsciiStyle } from "../ascii-generator/ascii-generator";
 import "./styles.css";
 
@@ -441,7 +442,13 @@ function renderMidiOverlay(): void {
         </section>
       </section>
 
-      <section class="midi-keyboard">
+      <section class="midi-preset-panel">
+<div class="midi-section-head"><div><span>INSTRUMENT</span><strong>SOUND PRESET</strong></div>
+<label class="midi-preset-select"><select id="midi-preset" aria-label="Sound preset">${MIDI_SOUND_PRESETS.map(p => `<option value="${p.id}" ${p.id === loadMidiPresetId() ? "selected" : ""}>${escapeHtml(p.name)} · ${escapeHtml(p.description)}</option>`).join("")}</select></label></div>
+<div class="midi-ui-sound-row"><span>UI SOUND SET</span><select id="midi-ui-sound" aria-label="UI sound set">${MIDI_UI_SOUND_CATALOG.map(p => `<option value="${p.id}" ${p.id === loadMidiUiSoundId() ? "selected" : ""}>${escapeHtml(p.name)}</option>`).join("")}</select>
+<button data-midi-ui-sound-test="click" type="button">CLICK</button><button data-midi-ui-sound-test="select" type="button">SELECT</button><button data-midi-ui-sound-test="confirm" type="button">CONFIRM</button><button data-midi-ui-sound-test="back" type="button">BACK</button><button data-midi-ui-sound-test="error" type="button">ERROR</button><button data-midi-ui-sound-test="pad" type="button">PAD</button></div>
+</section>
+<section class="midi-keyboard">
         <div class="midi-section-head">
           <div><span>PERFORMANCE KEYS</span><strong>25 KEY MINI KEYBOARD</strong></div>
           <span class="midi-range-label">${midiNoteName(notes[0])} — ${midiNoteName(notes[notes.length - 1])}</span>
@@ -568,6 +575,7 @@ function renderMidiOverlay(): void {
       event.preventDefault();
       button.setPointerCapture(event.pointerId);
       midiController.triggerPad(note, 110);
+      midiController.playUiSound("pad");
       button.classList.add("active");
       window.setTimeout(() => button.classList.remove("active"), 100);
     };
@@ -592,6 +600,7 @@ function renderMidiOverlay(): void {
     button.addEventListener("pointerdown", press);
     button.addEventListener("pointerup", release);
     button.addEventListener("pointercancel", release);
+    button.addEventListener("lostpointercapture", release);
   });
 
   document.querySelectorAll<HTMLButtonElement>("[data-midi-asset]").forEach(button => {
