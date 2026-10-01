@@ -1,0 +1,151 @@
+name: LIVE playback status
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Refresh LIVE status cache
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+
+          const youtubeChannels = {
+            "papaplatte:youtube": "UCDmbhGe7-wC1a55l5ZYAZJw",
+            "montanablack88:youtube": "UCpAMOlA_0hFXopIxMq8ar0w",
+            "trymacs:youtube": "UC6Gc4KQ1ueDnh8x7plaAD3w",
+            "marmok:youtube": "UCkxpiTIU50N3_dNt4WMMZyw"
+          };
+
+          const twitchChannels = [
+            ["leb1ga", "leb1ga"], ["dendi", "dendi"], ["rolex9", "rolex9"],
+            ["papaplatte", "papaplatte"], ["montanablack88", "montanablack88"],
+            ["trymacs", "trymacs"], ["smetanduck", "smetanduck"],
+            ["titamin1", "titamin1"], ["dunkelsch4tten", "dunkelsch4tten"],
+            ["buster", "buster"], ["zubarefff", "zubareff"]
+          ];
+
+          const sources = {};
+          const now = new Date().toISOString();
+
+          async function json(url, options = {}) {
+            const response = await fetch(url, options);
+            if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${url}`);
+            return response.json();
+          }
+
+          async function refreshYoutube() {
+            if (!process.env.YOUTUBE_API_KEY) return;
+            for (const [key, channelId] of Object.entries(youtubeChannels)) {
+              try {
+                const liveUrl = new URL("https://www.googleapis.com/youtube/v3/search");
+                liveUrl.search = new URLSearchParams({
+                  part: "snippet",
+                  channelId,
+                  eventType: "live",
+                  type: "video",
+                  maxResults: "1",
+                  key: process.env.YOUTUBE_API_KEY
+                });
+                const live = await json(liveUrl);
+                const activityUrl = new URL("https://www.googleapis.com/youtube/v3/activities");
+                activityUrl.search = new URLSearchParams({
+                  part: "snippet,contentDetails",
+                  channelId,
+                  maxResults: "10",
+                  key: process.env.YOUTUBE_API_KEY
+                });
+                const activity = await json(activityUrl);
+                const latestUpload = (activity.items || []).find(item => item?.snippet?.type === "upload" && item?.contentDetails?.upload?.videoId);
+                const liveItem = live.items?.[0];
+                sources[key] = {
+                  online: Boolean(liveItem?.id?.videoId),
+                  ...(liveItem?.id?.videoId ? { liveVideoId: liveItem.id.videoId } : {}),
+                  ...(latestUpload?.contentDetails?.upload?.videoId ? { fallbackVideoId: latestUpload.contentDetails.upload.videoId } : {}),
+                  checkedAt: now
+                };
+              } catch (error) {
+                console.error("YouTube", key, error.message);
+              }
+            }
+          }
+
+          async function refreshTwitch() {
+            if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) return;
+            try {
+              const tokenResponse = await json("https://id.twitch.tv/oauth2/token", {
+                method: "POST",
+                headers: { "content-type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                  client_id: process.env.TWITCH_CLIENT_ID,
+                  client_secret: process.env.TWITCH_CLIENT_SECRET,
+                  grant_type: "client_credentials"
+                })
+              });
+              const headers = {
+                "Authorization": `Bearer ${tokenResponse.access_token}`,
+                "Client-Id": process.env.TWITCH_CLIENT_ID
+              };
+              const streamUrl = new URL("https://api.twitch.tv/helix/streams");
+              for (const [, login] of twitchChannels) streamUrl.searchParams.append("user_login", login);
+              const streams = await json(streamUrl, { headers });
+              const online = new Map((streams.data || []).map(stream => [stream.user_login.toLowerCase(), stream]));
+              for (const [key, login] of twitchChannels) {
+                const stream = online.get(login.toLowerCase());
+                let fallbackVideoId;
+                try {
+                  const vodUrl = new URL("https://api.twitch.tv/helix/videos");
+                  vodUrl.searchParams.set("user_id", stream?.user_id || "");
+                  vodUrl.searchParams.set("type", "archive");
+                  vodUrl.searchParams.set("first", "1");
+                  if (stream?.user_id) {
+                    const vods = await json(vodUrl, { headers });
+                    fallbackVideoId = vods.data?.[0]?.id;
+                  }
+                } catch (error) {
+                  console.error("Twitch VOD", key, error.message);
+                }
+                sources[`${key}:twitch`] = {
+                  online: Boolean(stream),
+                  ...(stream?.id ? { liveVideoId: stream.id } : {}),
+                  ...(fallbackVideoId ? { fallbackVideoId } : {}),
+                  checkedAt: now
+                };
+              }
+            } catch (error) {
+              console.error("Twitch", error.message);
+            }
+          }
+
+          (async () => {
+            await refreshYoutube();
+            await refreshTwitch();
+            fs.writeFileSync("web/live-status.json", JSON.stringify({ generatedAt: now, sources }, null, 2) + "\n");
+          })().catch(error => { console.error(error); process.exit(1); });
+          NODE
+
+      - name: Commit changed LIVE status cache
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- web/live-status.json; then
+            echo "LIVE status cache unchanged"
+            exit 0
+          fi
+          git add web/live-status.json
+          git commit -m "chore: refresh LIVE playback status"
+          git push
