@@ -2,7 +2,7 @@ name: FREEzzz Integration Smoke
 
 on:
   workflow_run:
-    workflows: ["FREEzzz Platform Pages"]
+    workflows: ["FREEzzz Platform Release"]
     types: [completed]
   workflow_dispatch:
 
@@ -18,10 +18,10 @@ jobs:
         run: |
           set -euo pipefail
           url="https://freezzgames.github.io/FREEzzzPlatform-/"
-          for attempt in $(seq 1 12); do
-            code="$(curl -L -s -o /tmp/pages.html -w '%{http_code}' "$url" || true)"
+          for attempt in $(seq 1 18); do
+            code="$(curl -L --max-time 15 -s -o /tmp/pages.html -w '%{http_code}' "$url" || true)"
             echo "Web attempt $attempt: HTTP $code"
-            if [ "$code" = "200" ] && grep -q 'FREEzzz Platform' /tmp/pages.html; then
+            if [ "$code" = "200" ] && grep -q 'FREEzzz Platform' /tmp/pages.html && grep -q 'telegram.org/js/telegram-web-app.js' /tmp/pages.html; then
               break
             fi
             sleep 10
@@ -33,31 +33,46 @@ jobs:
       - name: Check LIVE cache chain
         run: |
           set -euo pipefail
-          curl -fsSL "https://freezzgames.github.io/FREEzzzPlatform-/live-status.json?smoke=$GITHUB_RUN_ID" -o /tmp/live-status.json
-          node - <<'NODE'
+          url="https://freezzgames.github.io/FREEzzzPlatform-/live-status.json?smoke=$GITHUB_RUN_ID"
+          for attempt in $(seq 1 18); do
+            if curl -fsSL --max-time 15 "$url" -o /tmp/live-status.json; then
+              if node - <<'NODE'
           const fs = require("fs");
           const data = JSON.parse(fs.readFileSync("/tmp/live-status.json", "utf8"));
-          if (!data || typeof data !== "object" || typeof data.generatedAt !== "string") {
-            throw new Error("LIVE cache has invalid shape");
-          }
-          if (!data.sources || typeof data.sources !== "object" || Object.keys(data.sources).length === 0) {
-            throw new Error("LIVE cache contains zero sources");
-          }
+          if (!data?.generatedAt || !data.sources || Object.keys(data.sources).length === 0) process.exit(1);
           console.log("LIVE sources:", Object.keys(data.sources).length);
           NODE
+              then
+                exit 0
+              fi
+            fi
+            echo "LIVE attempt $attempt: cache not ready"
+            sleep 10
+          done
+          echo "LIVE cache did not become valid"
+          exit 1
 
       - name: Check CHAT bridge chain
         run: |
           set -euo pipefail
-          curl -fsSL "https://freezzzplatform-chat.onrender.com/api/chat/config?smoke=$GITHUB_RUN_ID" -o /tmp/chat-config.json
-          node - <<'NODE'
+          url="https://freezzzplatform-chat.onrender.com/api/chat/config?smoke=$GITHUB_RUN_ID"
+          for attempt in $(seq 1 18); do
+            if curl -fsSL --max-time 20 "$url" -o /tmp/chat-config.json; then
+              if node - <<'NODE'
           const fs = require("fs");
           const data = JSON.parse(fs.readFileSync("/tmp/chat-config.json", "utf8"));
-          if (!data || typeof data !== "object") throw new Error("CHAT config is not an object");
-          if (typeof data.telegramConfigured !== "boolean") throw new Error("CHAT config missing telegramConfigured");
-          if (typeof data.telegramConnected !== "boolean") throw new Error("CHAT config missing telegramConnected");
+          if (typeof data?.telegramConfigured !== "boolean" || typeof data?.telegramConnected !== "boolean") process.exit(1);
           console.log("CHAT bridge responded. Telegram configured:", data.telegramConfigured, "connected:", data.telegramConnected);
           NODE
+              then
+                exit 0
+              fi
+            fi
+            echo "CHAT attempt $attempt: bridge not ready"
+            sleep 10
+          done
+          echo "CHAT bridge did not become ready"
+          exit 1
 
       - name: Report connected release
         run: echo "CONNECTED RELEASE CHECK: PASS"
