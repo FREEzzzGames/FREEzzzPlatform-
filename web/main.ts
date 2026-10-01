@@ -17,6 +17,7 @@ import { TelegramWebAppAdapter } from "../telegram-integration/webapp-adapter";
 import { WebStorageAdapter } from "../storage/platform-storage";
 import { GenesisWebPlayer } from "./genesis-emulator";
 import { VirtualGamepad } from "./virtual-gamepad";
+import { RadioBrowserClient, RADIO_GENRES, type RadioBrowserStation } from "./radio-browser";
 import "./styles.css";
 
 const shell = new PlatformShell();
@@ -37,7 +38,7 @@ library.add({ id: "platform-demo", title: "Platform Demo", type: "game", version
 
 live.registerChannel({ id: "demo-channel", name: "Demo Channel", streamIds: [] });
 live.registerStream({ id: "demo-stream", channelId: "demo-channel", title: "Demo stream", source: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", protocol: "progressive", isLive: false });
-radio.registerStation({ id: "demo-radio", name: "Demo Radio", stream: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", format: "audio/mpeg" });
+
 
 const mount = (() => {
   const element = document.querySelector<HTMLDivElement>("#app");
@@ -54,6 +55,14 @@ const gameCatalog = new GameCatalog();
 gameCatalog.register({ id: "platform-demo-game", name: "Platform Demo", version: "1.0.0", emulatorId: "nes", content: contentRegistry.get("platform-demo-game")! });
 const gamePlayer = new WebGamePlayer(gameCatalog, new GameRuntime({ content: new GameContentResolver(contentRegistry, contentSource) }));
 const genesisPlayer = new GenesisWebPlayer();
+const radioBrowser = new RadioBrowserClient();
+let radioStations: readonly RadioBrowserStation[] = [];
+let radioGenre = "pop";
+let radioQuery = "";
+let radioLoading = false;
+let radioError = "";
+let radioRequestId = 0;
+let radioSelectedId = "";
 const genesisGamepad = new VirtualGamepad("sega-megadrive-6", (key, action) => genesisPlayer.sendInput(key, action));
 function syncGenesisGamepad(): void {
   const target = document.querySelector<HTMLElement>("#genesis-gamepad");
@@ -127,10 +136,10 @@ function view(current: PlatformWorkspaceView): string {
     return `<section class="hero panel"><span class="muted">Production workspace</span><h2>Everything in one runtime.</h2><p>Games, library, CHAT, LIVE and RADIO use independent adapters while the workspace preserves the active session.</p><div class="metrics"><span>Runtime<strong>${dStatus()}</strong></span><span>Modules<strong>4</strong></span><span>Game<strong>${gameState.gameId ? escapeHtml(gameState.gameId) : "None"}</strong></span></div><div class="quick-actions"><button data-quick="library" type="button">Open Library</button><button data-quick="chat" type="button">Open Chat</button><button data-quick="live" type="button">Open Live</button><button data-quick="radio" type="button">Open Radio</button></div></section>`;
   }
   if (current === "system") return `<section class="panel"><span class="muted">System</span><h2>Runtime health</h2><div class="status-list"><div>HOST <strong>${host.getStatus()}</strong></div><div>CHAT <strong>${chat.status}</strong></div><div>LIVE <strong>${live.status}</strong></div><div>RADIO <strong>${radio.status}</strong></div><div>LIBRARY <strong>${library.status}</strong></div><div>SESSION <strong>${platformSession.load() ? "RESTORED" : "NEW"}</strong></div></div></section>`;
-  if (current === "library") return `<section class="panel"><span class="muted">Library</span><h2>Games</h2><div class="list">${gameCatalog.list().map(game => `<div class="row"><div><strong>${escapeHtml(game.name)}</strong><span>${escapeHtml(game.emulatorId)} · ${escapeHtml(game.version)}</span></div><button data-game-launch="${escapeHtml(game.id)}" type="button">Launch</button></div>`).join("")}</div><div class="game-status"><span>Status: ${gamePlayer.getState().status}</span><span>Frames: ${gamePlayer.getState().frame}</span><div class="actions"><button id="game-save" type="button">Save</button><button id="game-pause" type="button">Pause</button><button id="game-resume" type="button">Resume</button><button id="game-exit" type="button">Exit</button></div></div><canvas id="game-canvas" width="256" height="240" aria-label="Game display"></canvas><hr><span class="muted">Sega Mega Drive / Genesis</span><h2>Mega Drive Collection</h2><p class="muted">Choose a local ROM you are entitled to use. ROM files are never uploaded to the platform.</p><div class="list genesis-library"><div class="row genesis-row"><div><strong>Mortal Kombat 3 (Europe).md</strong><span>Mega Drive · Local ROM</span></div><label class="genesis-file-button">Select ROM<input id="genesis-rom-mk3" type="file" accept=".md,.gen,.bin,.smd,.mdx" data-genesis-id="mk3" data-genesis-name="Mortal Kombat 3 (Europe).md"></label></div><div class="row genesis-row"><div><strong>WWF WrestleMania - The Arcade Game (USA, Europe).md</strong><span>Mega Drive · Local ROM</span></div><label class="genesis-file-button">Select ROM<input id="genesis-rom-wwf" type="file" accept=".md,.gen,.bin,.smd,.mdx" data-genesis-id="wwf" data-genesis-name="WWF WrestleMania - The Arcade Game (USA, Europe).md"></label></div><div class="row genesis-row"><div><strong>Mortal Kombat II (World).md</strong><span>Mega Drive · Local ROM</span></div><label class="genesis-file-button">Select ROM<input id="genesis-rom-mk2" type="file" accept=".md,.gen,.bin,.smd,.mdx" data-genesis-id="mk2" data-genesis-name="Mortal Kombat II (World).md"></label></div><div class="row genesis-row"><div><strong>Simpsons, The - Bart vs. the Space Mutants (USA, Europe) (Rev A).md</strong><span>Mega Drive · Local ROM</span></div><label class="genesis-file-button">Select ROM<input id="genesis-rom-simpsons" type="file" accept=".md,.gen,.bin,.smd,.mdx" data-genesis-id="simpsons" data-genesis-name="Simpsons, The - Bart vs. the Space Mutants (USA, Europe) (Rev A).md"></label></div></div><div id="genesis-status" class="game-status">Sega emulator: idle</div><div id="genesis-player" style="width:100%;min-height:480px;background:#000"></div><div id="genesis-gamepad"></div></section>`;
+  if (current === "library") return `<section class="panel"><span class="muted">Library</span><h2>Games</h2><div class="list">${gameCatalog.list().map(game => `<div class="row"><div><strong>${escapeHtml(game.name)}</strong><span>${escapeHtml(game.emulatorId)} · ${escapeHtml(game.version)}</span></div><button data-game-launch="${escapeHtml(game.id)}" type="button">Launch</button></div>`).join("")}</div><div class="game-status"><span>Status: ${gamePlayer.getState().status}</span><span>Frames: ${gamePlayer.getState().frame}</span><div class="actions"><button id="game-save" type="button">Save</button><button id="game-pause" type="button">Pause</button><button id="game-resume" type="button">Resume</button><button id="game-exit" type="button">Exit</button></div></div><canvas id="game-canvas" width="256" height="240" aria-label="Game display"></canvas><hr><span class="muted">Sega Mega Drive / Genesis</span><h2>Mega Drive Collection</h2><p class="muted">Choose a local ROM you are entitled to use. ROM files are never uploaded to the platform.</p><div class="list genesis-library"><div class="row genesis-row"><div><strong>Local Mega Drive ROM</strong><span>Test only · choose a ROM from your own storage</span></div><label class="genesis-file-button">Select ROM<input id="genesis-rom-local" type="file" accept=".md,.gen,.bin,.smd,.mdx"></label></div></div><div id="genesis-status" class="game-status">Sega emulator: idle</div><div id="genesis-player" style="width:100%;min-height:480px;background:#000"></div><div id="genesis-gamepad"></div></section>`;
   if (current === "chat") return `<section class="panel"><span class="muted">CHAT</span><h2>General</h2><div class="chat-log">${chat.store.listMessages("general").map(message => `<div class="chat-message"><strong>${escapeHtml(message.senderId)}</strong><span>${escapeHtml(message.text)}</span><time>${new Date(message.timestamp).toLocaleTimeString()}</time></div>`).join("")}</div><form id="chat-form" class="inline-form"><input id="chat-input" maxlength="500" autocomplete="off" required placeholder="Message"><button type="submit">Send</button></form></section>`;
   if (current === "live") return `<section class="panel"><span class="muted">LIVE</span><h2>Demo stream</h2><div id="live-player"></div><div class="actions"><button id="live-load" type="button">Load</button><button id="live-play" type="button">Play</button><button id="live-pause" type="button">Pause</button><button id="live-stop" type="button">Stop</button></div></section>`;
-  return `<section class="panel"><span class="muted">RADIO</span><h2>Demo Radio</h2><p>Persistent player boundary with browser media adapter.</p><div class="actions"><button id="radio-load" type="button">Load</button><button id="radio-play" type="button">Play</button><button id="radio-pause" type="button">Pause</button><button id="radio-stop" type="button">Stop</button></div></section>`;
+  return `<section class="panel radio-portal"><span class="muted">PUBLIC RADIO</span><h2>Internet Radio</h2><p>Public internet stations from Radio Browser. Choose a genre, search a station, then press Play.</p><div id="radio-audio-host" class="radio-audio-host"></div><div class="radio-toolbar"><form id="radio-search-form" class="inline-form"><input id="radio-search-input" value="${escapeHtml(radioQuery)}" maxlength="80" autocomplete="off" placeholder="Search station"><button type="submit">Search</button></form></div><div class="radio-genres">${RADIO_GENRES.map(genre=>`<button class="${radioGenre===genre?"active":""}" data-radio-genre="${genre}" type="button">${escapeHtml(genre)}</button>`).join("")}</div><div class="radio-status">${radioLoading?"Loading stations…":radioError?escapeHtml(radioError):radioStations.length+\" stations\"}</div><div class="list radio-stations">${radioStations.map(station=>`<div class="row radio-station"><div><strong>${escapeHtml(station.name)}</strong><span>${escapeHtml(station.country||"International")} · ${escapeHtml(station.codec||"stream")} · ${station.bitrate||0} kbps</span></div><button data-radio-station="${escapeHtml(station.stationuuid)}" type="button">${radioSelectedId===station.stationuuid?"Playing":"Play"}</button></div>`).join("")}</div><div class="muted">Catalog: Radio Browser · HTTPS streams only</div></section>`;
 }
 
 function bind(current: PlatformWorkspaceView): void {
@@ -174,11 +183,70 @@ function bind(current: PlatformWorkspaceView): void {
     const target = document.querySelector("#live-player"); if (target && liveElement && liveElement.parentElement !== target) target.append(liveElement);
   }
   if (current === "radio") {
-    document.querySelector("#radio-load")?.addEventListener("click", () => { try { radio.load("demo-radio", "web"); } catch (error) { workspace.reportError(error); render(); } });
-    document.querySelector("#radio-play")?.addEventListener("click", () => { try { radio.play(); } catch (error) { workspace.reportError(error); render(); } });
-    document.querySelector("#radio-pause")?.addEventListener("click", () => { try { radio.pause(); } catch (error) { workspace.reportError(error); render(); } });
-    document.querySelector("#radio-stop")?.addEventListener("click", () => { try { radio.stopPlayback(); } catch (error) { workspace.reportError(error); render(); } });
+    document.querySelector<HTMLFormElement>("#radio-search-form")?.addEventListener("submit", event => {
+      event.preventDefault();
+      const input = document.querySelector<HTMLInputElement>("#radio-search-input");
+      radioQuery = input?.value.trim() ?? "";
+      void loadRadioStations();
+    });
+    document.querySelectorAll<HTMLButtonElement>("[data-radio-genre]").forEach(button => button.addEventListener("click", () => {
+      radioGenre = button.dataset.radioGenre ?? "pop";
+      radioQuery = "";
+      void loadRadioStations();
+    }));
+    document.querySelectorAll<HTMLButtonElement>("[data-radio-station]").forEach(button => button.addEventListener("click", () => {
+      void playRadioStation(button.dataset.radioStation ?? "");
+    }));
+    if (!radioStations.length && !radioLoading && !radioError) void loadRadioStations();
   }
+}
+
+async function loadRadioStations(): Promise<void> {
+  const requestId = ++radioRequestId;
+  radioLoading = true;
+  radioError = "";
+  render();
+  try {
+    const stations = await radioBrowser.searchStations({ genre: radioGenre, query: radioQuery, limit: 30 });
+    if (requestId !== radioRequestId) return;
+    radioStations = stations;
+  } catch (error) {
+    if (requestId !== radioRequestId) return;
+    radioStations = [];
+    radioError = error instanceof Error ? error.message : String(error);
+  } finally {
+    if (requestId === radioRequestId) {
+      radioLoading = false;
+      render();
+    }
+  }
+}
+
+async function playRadioStation(stationId: string): Promise<void> {
+  const station = radioStations.find(item => item.stationuuid === stationId);
+  if (!station) return;
+  try {
+    const stream = station.url_resolved || station.url;
+    radio.registerStation({
+      id: `rb-${station.stationuuid}`,
+      name: station.name,
+      stream,
+      format: station.codec ? `audio/${station.codec.toLowerCase()}` : "audio/mpeg",
+      metadata: {
+        country: station.country,
+        language: station.language,
+        tags: station.tags,
+        homepage: station.homepage
+      }
+    });
+  } catch (error) {
+    if (!(error instanceof Error && error.message.includes("already exists"))) throw error;
+  }
+  radioSelectedId = station.stationuuid;
+  radio.load(`rb-${station.stationuuid}`, "web");
+  radio.play();
+  void radioBrowser.registerClick(station.stationuuid);
+  render();
 }
 
 function drawGameFrame(): void {
