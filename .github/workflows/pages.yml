@@ -38,6 +38,13 @@ jobs:
       - name: Build web portal
         run: npm run build
 
+      - name: Validate Pages entrypoint
+        run: |
+          test -f dist/index.html
+          test ! -f dist/README.md
+          grep -q '<script type="module"' dist/index.html
+          touch dist/.nojekyll
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
