@@ -182,6 +182,110 @@ function loadCustomLiveCreators(): LiveCreator[] {
 function saveCustomLiveCreators(): void {
   try { localStorage.setItem(LIVE_CUSTOM_STORAGE_KEY, JSON.stringify(customLiveCreators)); } catch {}
 }
+function normalizeLiveUrl(value: string): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  try {
+    const candidate = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : "https://" + trimmed);
+    if (candidate.protocol !== "https:") return undefined;
+    return candidate.toString();
+  } catch {
+    return undefined;
+  }
+}
+function parseCustomLiveCreator(rawUrl: string): LiveCreator | undefined {
+  const normalized = normalizeLiveUrl(rawUrl);
+  if (!normalized) return undefined;
+  const url = new URL(normalized);
+  const host = url.hostname.toLowerCase().replace(/^www\./, "");
+  const parts = url.pathname.split("/").filter(Boolean);
+  const id = "custom-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+  if (host === "twitch.tv") {
+    const login = parts[0]?.toLowerCase();
+    if (!login || !/^[a-z0-9_]{3,30}$/.test(login)) return undefined;
+    return {
+      id, name: login, region: "CUSTOM · Twitch", categories: ["Twitch"], custom: true,
+      sources: [{ id: "twitch", label: "Twitch", kind: "twitch", url: "https://twitch.tv/" + login, channel: login }]
+    };
+  }
+  if (host === "youtube.com" || host === "m.youtube.com" || host === "youtu.be") {
+    let videoId: string | undefined;
+    let channelId: string | undefined;
+    let youtubeHandle: string | undefined;
+    if (host === "youtu.be") videoId = parts[0];
+    else if (url.searchParams.get("v")) videoId = url.searchParams.get("v") ?? undefined;
+    else if (parts[0] === "live" || parts[0] === "shorts") videoId = parts[1];
+    else if (parts[0] === "channel" && parts[1]?.startsWith("UC")) channelId = parts[1];
+    else if (parts[0]?.startsWith("@")) youtubeHandle = parts[0].slice(1);
+    else if (parts[0] && !["watch", "feed", "videos", "streams"].includes(parts[0])) youtubeHandle = parts[0];
+    if (!videoId && !channelId && !youtubeHandle) return undefined;
+    const source: LiveSource = {
+      id: "youtube", label: "YouTube", kind: "youtube", url: normalized,
+      ...(videoId ? { videoId } : {}),
+      ...(channelId ? { channel: channelId } : {}),
+      ...(youtubeHandle ? { youtubeHandle } : {})
+    };
+    return {
+      id, name: youtubeHandle || channelId?.slice(0, 12) || "YouTube",
+      region: "CUSTOM · YouTube", categories: ["YouTube"], custom: true, sources: [source]
+    };
+  }
+  return undefined;
+}
+function removeCustomLiveCreator(creatorId: string): void {
+  customLiveCreators = customLiveCreators.filter(creator => creator.id !== creatorId);
+  livePopups = livePopups.filter(popup => popup.creatorId !== creatorId);
+  if (selectedLiveCreatorId === creatorId) {
+    const fallback = allLiveCreators()[0];
+    selectedLiveCreatorId = fallback.id;
+    selectedLiveSourceId = fallback.sources[0].id;
+  }
+  saveCustomLiveCreators();
+  render();
+}
+function openLiveAddModal(): void {
+  document.querySelector("#live-add-modal")?.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "live-add-modal";
+  overlay.className = "live-add-modal";
+  overlay.innerHTML =
+    '<form class="live-add-dialog" id="live-add-form">' +
+    '<div class="live-add-head"><div><span class="muted">LIVE / CUSTOM</span><h3>Добавить стримера</h3><p>Вставь ссылку Twitch или YouTube.</p></div><button id="live-add-close" class="live-add-close" type="button" aria-label="Закрыть">×</button></div>' +
+    '<label class="live-add-label">Ссылка на канал или видео<input id="live-add-url" type="url" required autocomplete="off" placeholder="https://twitch.tv/... или https://youtube.com/..."></label>' +
+    '<div id="live-add-error" class="live-add-error" role="alert"></div>' +
+    '<div class="live-add-actions"><button id="live-add-cancel" type="button">Отмена</button><button type="submit" class="live-add-submit">Добавить</button></div>' +
+    '</form>';
+  document.body.append(overlay);
+  const close = () => overlay.remove();
+  overlay.querySelector("#live-add-close")?.addEventListener("click", close);
+  overlay.querySelector("#live-add-cancel")?.addEventListener("click", close);
+  overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
+  overlay.querySelector<HTMLFormElement>("#live-add-form")?.addEventListener("submit", event => {
+    event.preventDefault();
+    const input = overlay.querySelector<HTMLInputElement>("#live-add-url");
+    const error = overlay.querySelector<HTMLElement>("#live-add-error");
+    const creator = parseCustomLiveCreator(input?.value ?? "");
+    if (!creator) {
+      if (error) error.textContent = "Нужна корректная HTTPS-ссылка Twitch или YouTube.";
+      return;
+    }
+    const source = creator.sources[0];
+    const duplicate = allLiveCreators().some(item => item.sources.some(existing =>
+      existing.url === source.url || (source.channel && existing.kind === source.kind && existing.channel === source.channel)
+    ));
+    if (duplicate) {
+      if (error) error.textContent = "Этот стример уже есть в каталоге.";
+      return;
+    }
+    customLiveCreators = [...customLiveCreators, creator];
+    saveCustomLiveCreators();
+    selectedLiveCreatorId = creator.id;
+    selectedLiveSourceId = creator.sources[0].id;
+    close();
+    render();
+  });
+  window.setTimeout(() => overlay.querySelector<HTMLInputElement>("#live-add-url")?.focus(), 0);
+}
 function liveStatusKey(creatorId: string, sourceId: string): string {
   return `${creatorId}:${sourceId}`;
 }
