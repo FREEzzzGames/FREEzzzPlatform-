@@ -18,6 +18,7 @@ import { TelegramWebAppAdapter } from "../telegram-integration/webapp-adapter";
 import { WebStorageAdapter } from "../storage/platform-storage";
 import { RadioBrowserClient, RADIO_GENRES, type RadioBrowserStation } from "./radio-browser";
 import { WebMidiController, midiNoteName } from "./midi-controller";
+import { MIDI_ASSET_CATALOG, type MidiAssetItem } from "./midi-asset-database";
 import { frameAsciiArt, generateAsciiText, type AsciiStyle } from "../ascii-generator/ascii-generator";
 import "./styles.css";
 
