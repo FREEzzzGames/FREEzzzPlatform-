@@ -116,7 +116,7 @@ class WebRadioPlayer implements RadioPlayer {
     });
   }
 
-  private setStatus(status:RadioPlaybackState["status"]){
+  private setStatus(status:"idle"|"loading"|"playing"|"paused"|"stopped"|"failed"){
     this.status=status;
     this.updatedAt=Date.now();
   }
