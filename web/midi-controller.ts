@@ -9,10 +9,10 @@ export class WebMidiController {
   private audioContext: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private activeVoices = new Map<number, { oscillator: OscillatorNode; gain: GainNode }>();
+  private audioEnabled = false;
 
   async connect(): Promise<MidiOutputInfo[]> {
-    this.ensureAudio();
-    await this.resumeAudio();
+    await this.enableAudio();
     if (!("requestMIDIAccess" in navigator)) return [];
     this.access = await navigator.requestMIDIAccess();
     const outputs = [...this.access.outputs.values()];
@@ -31,6 +31,8 @@ export class WebMidiController {
   }
 
   noteOn(note: number, velocity = 100): void {
+    this.ensureAudio();
+    this.audioEnabled = true;
     void this.resumeAudio();
     this.send([0x90 | this.channel, note & 0x7f, velocity & 0x7f]);
     this.startVoice(note, velocity);
@@ -47,7 +49,7 @@ export class WebMidiController {
     this.send([0xb0 | this.channel, controller & 0x7f, normalized]);
     if (controller === 7) {
       this.ensureAudio();
-      this.masterGain!.gain.value = normalized / 127 * 0.22;
+      this.masterGain!.gain.value = normalized / 127 * 0.42;
     }
   }
 
@@ -56,6 +58,23 @@ export class WebMidiController {
   setOctave(octave: number): void { this.octave = Math.max(1, Math.min(7, octave)); }
   getOctave(): number { return this.octave; }
   getCC(controller: number): number { return this.ccValues.get(controller) ?? 64; }
+  isAudioEnabled(): boolean { return this.audioEnabled && this.audioContext?.state === "running"; }
+  getAudioState(): AudioContextState | "unavailable" | "idle" {
+    if (!this.audioContext) return "idle";
+    return this.audioContext.state;
+  }
+  async enableAudio(): Promise<boolean> {
+    this.ensureAudio();
+    if (!this.audioContext) return false;
+    try {
+      await this.audioContext.resume();
+      this.audioEnabled = this.audioContext.state === "running";
+      return this.audioEnabled;
+    } catch {
+      this.audioEnabled = false;
+      return false;
+    }
+  }
 
   private ensureAudio(): void {
     if (this.audioContext) return;
@@ -63,7 +82,7 @@ export class WebMidiController {
     if (!AudioContextCtor) return;
     const context = new AudioContextCtor();
     const gain = context.createGain();
-    gain.gain.value = (this.ccValues.get(7) ?? 100) / 127 * 0.22;
+    gain.gain.value = (this.ccValues.get(7) ?? 100) / 127 * 0.42;
     gain.connect(context.destination);
     this.audioContext = context;
     this.masterGain = gain;
@@ -86,7 +105,7 @@ export class WebMidiController {
     oscillator.type = "triangle";
     oscillator.frequency.value = 440 * Math.pow(2, (note - 69) / 12);
 
-    const peak = Math.max(0.001, (velocity / 127) * 0.18);
+    const peak = Math.max(0.001, (velocity / 127) * 0.24);
     const now = context.currentTime;
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.exponentialRampToValueAtTime(peak, now + 0.015);
