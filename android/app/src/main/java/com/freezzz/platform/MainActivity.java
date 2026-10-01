@@ -2,7 +2,10 @@ package com.freezzz.platform;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.content.Intent;
+import android.net.Uri;
 import android.webkit.ConsoleMessage;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -19,6 +22,8 @@ import java.util.Map;
 
 public class MainActivity extends Activity {
     private static final String LOCAL_HOST = "freezzz.local";
+    private static final int FILE_REQUEST = 4101;
+    private ValueCallback<Uri[]> fileCallback;
     private static final String LOCAL_SCHEME = "https";
     private WebView webView;
 
@@ -43,6 +48,33 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new LocalAssetWebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
+            public boolean onShowFileChooser(
+                WebView view,
+                ValueCallback<Uri[]> callback,
+                FileChooserParams params
+            ) {
+                if (fileCallback != null) {
+                    fileCallback.onReceiveValue(null);
+                }
+                fileCallback = callback;
+
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("*/*");
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
+
+                try {
+                    startActivityForResult(intent, FILE_REQUEST);
+                } catch (Exception error) {
+                    fileCallback.onReceiveValue(null);
+                    fileCallback = null;
+                    android.util.Log.e("FREEzzzWeb", "Cannot open document picker", error);
+                    return false;
+                }
+                return true;
+            }
+
+            @Override
             public boolean onConsoleMessage(ConsoleMessage message) {
                 android.util.Log.d(
                     "FREEzzzWeb",
@@ -59,6 +91,31 @@ public class MainActivity extends Activity {
         } else {
             webView.restoreState(state);
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != FILE_REQUEST || fileCallback == null) return;
+
+        Uri[] result = null;
+        if (resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            if (uri != null) {
+                result = new Uri[] { uri };
+                try {
+                    getContentResolver().takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    );
+                } catch (Exception ignored) {
+                    // Some document providers do not expose persistable permissions.
+                }
+            }
+        }
+
+        fileCallback.onReceiveValue(result);
+        fileCallback = null;
     }
 
     @Override
