@@ -163,6 +163,7 @@ export class RadioModule extends BaseModule implements RadioModuleApi {
     const station = this.catalog.getStation(stationId);
     if (!station) throw new Error(`RADIO station "${stationId}" does not exist.`);
     const adapter = this.players.resolve(station.format, target);
+    this.player?.stop();
     this.player = adapter.createPlayer();
     this.player.initialize();
     this.player.load(station);
