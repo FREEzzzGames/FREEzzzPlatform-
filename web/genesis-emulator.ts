@@ -53,6 +53,12 @@ window.EJS_browserMode="mobile";
 window.EJS_color="#1aa7ff";
 window.EJS_onGameStart=function(){parent.postMessage({type:"freezzz-genesis-ready"},"*");};
 window.EJS_onExit=function(){parent.postMessage({type:"freezzz-genesis-exit"},"*");};
+window.addEventListener("message",function(event){
+  if(!event.data || event.data.type!=="freezzz-gamepad-key") return;
+  var type=event.data.action==="keyup" ? "keyup" : "keydown";
+  var key=event.data.key;
+  window.dispatchEvent(new KeyboardEvent(type,{key:key,code:key,keyCode:({ArrowUp:38,ArrowDown:40,ArrowLeft:37,ArrowRight:39,Enter:13,ShiftLeft:16,KeyA:65,KeyS:83,KeyD:68,KeyQ:81,KeyW:87,KeyE:69}[key]||0),which:({ArrowUp:38,ArrowDown:40,ArrowLeft:37,ArrowRight:39,Enter:13,ShiftLeft:16,KeyA:65,KeyS:83,KeyD:68,KeyQ:81,KeyW:87,KeyE:69}[key]||0),bubbles:true}));
+});
 </script><script src="__CDN_SCRIPT__loader.js"></script></body></html>`;
       const page = html
         .replace("__CDN_DATA__", JSON.stringify(CDN_DATA))
