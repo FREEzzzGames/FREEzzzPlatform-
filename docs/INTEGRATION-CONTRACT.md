@@ -4,14 +4,14 @@ This contract is part of the release architecture. A release is considered conne
 
 ## Canonical chain
 
-GitHub main → CI → GitHub Pages → Web application → Telegram WebApp / CHAT bridge / LIVE providers / GAME runtime
+GitHub main → CI / unified Pages release → Web application → Telegram WebApp / CHAT bridge / LIVE providers / GAME runtime
 
 ## Required links
 
 1. GitHub
    - canonical repository: FREEzzzGames/FREEzzzPlatform-
    - canonical branch: main
-   - Pages workflow and CI workflow must exist
+   - Pages release workflow and CI workflow must exist
 2. Build
    - typecheck
    - tests
@@ -34,7 +34,7 @@ GitHub main → CI → GitHub Pages → Web application → Telegram WebApp / CH
 7. LIVE
    - web/live-status.json is part of the deployed artifact
    - LIVE client reads that cache
-   - LIVE status workflow owns cache refresh
+   - Pages release workflow refreshes LIVE cache before every deployment; no separate LIVE deployment workflow exists
    - offline playback may use fallbackVideoId
 8. GAME
    - GameCatalog/GameRuntime/WebGamePlayer remain connected to the Web shell
