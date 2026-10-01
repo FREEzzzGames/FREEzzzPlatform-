@@ -47,18 +47,83 @@ export class WebLiveAdapter implements LivePlayerAdapter {
 }
 
 class WebRadioPlayer implements RadioPlayer {
-  readonly id="web-audio"; readonly version="1.0.0"; readonly target="web" as const;
-  private audio?:HTMLAudioElement; private stationId?:string; private status:"idle"|"loading"|"playing"|"paused"|"stopped"|"failed"="idle"; private updatedAt=Date.now();
-  initialize(){this.audio=new Audio();this.audio.controls=true;this.audio.preload="none";this.audio.setAttribute("aria-label","Radio player");const host=document.querySelector<HTMLElement>("#radio-audio-host");if(host)host.append(this.audio);this.audio.addEventListener("play",()=>{this.status="playing";this.updatedAt=Date.now();});this.audio.addEventListener("pause",()=>{if(this.status==="playing")this.status="paused";this.updatedAt=Date.now();});this.audio.addEventListener("error",()=>{this.status="failed";this.updatedAt=Date.now();});}
-  load(station:RadioStation){if(!this.audio)throw new Error("RADIO player is not initialized.");this.stationId=station.id;this.status="loading";this.updatedAt=Date.now();this.audio.src=station.stream;}
-  play(){if(!this.audio)throw new Error("RADIO player is not initialized.");void this.audio.play().catch(()=>{this.status="failed";this.updatedAt=Date.now();});}
-  pause(){this.audio?.pause();this.status="paused";this.updatedAt=Date.now();}
-  stop(){this.audio?.pause();if(this.audio)this.audio.currentTime=0;this.status="stopped";this.updatedAt=Date.now();}
-  getState(){return Object.freeze({stationId:this.stationId,status:this.status,positionMs:Math.round((this.audio?.currentTime??0)*1000),updatedAt:this.updatedAt});}
+  readonly id="web-audio"; readonly version="1.1.0"; readonly target="web" as const;
+  private audio?:HTMLAudioElement;
+  private stationId?:string;
+  private status:"idle"|"loading"|"playing"|"paused"|"stopped"|"failed"="idle";
+  private updatedAt=Date.now();
+
+  initialize(){
+    this.audio=new Audio();
+    this.audio.controls=true;
+    this.audio.preload="none";
+    this.audio.setAttribute("aria-label","Radio player");
+
+    this.audio.addEventListener("loadstart",()=>this.setStatus("loading"));
+    this.audio.addEventListener("canplay",()=>{ if(this.status==="loading") this.updatedAt=Date.now(); });
+    this.audio.addEventListener("playing",()=>this.setStatus("playing"));
+    this.audio.addEventListener("pause",()=>{
+      if(this.status==="playing"||this.status==="loading") this.setStatus("paused");
+      else this.updatedAt=Date.now();
+    });
+    this.audio.addEventListener("ended",()=>this.setStatus("stopped"));
+    this.audio.addEventListener("error",()=>this.setStatus("failed"));
+
+    const host=document.querySelector<HTMLElement>("#radio-audio-host");
+    if(host) host.append(this.audio);
+  }
+
+  load(station:RadioStation){
+    if(!this.audio) throw new Error("RADIO player is not initialized.");
+    this.audio.pause();
+    this.audio.removeAttribute("src");
+    this.audio.load();
+    this.stationId=station.id;
+    this.status="loading";
+    this.updatedAt=Date.now();
+    this.audio.src=station.stream;
+    this.audio.load();
+  }
+
+  play(){
+    if(!this.audio) throw new Error("RADIO player is not initialized.");
+    this.status="loading";
+    this.updatedAt=Date.now();
+    void this.audio.play().catch(()=>{
+      this.setStatus("failed");
+    });
+  }
+
+  pause(){
+    if(!this.audio) throw new Error("RADIO player is not initialized.");
+    this.audio.pause();
+    this.setStatus("paused");
+  }
+
+  stop(){
+    if(!this.audio) throw new Error("RADIO player is not initialized.");
+    this.audio.pause();
+    this.audio.currentTime=0;
+    this.setStatus("stopped");
+  }
+
+  getState(){
+    return Object.freeze({
+      stationId:this.stationId,
+      status:this.status,
+      positionMs:Math.round((this.audio?.currentTime??0)*1000),
+      updatedAt:this.updatedAt
+    });
+  }
+
+  private setStatus(status:RadioPlaybackState["status"]){
+    this.status=status;
+    this.updatedAt=Date.now();
+  }
 }
 
 export class WebRadioAdapter implements RadioPlayerAdapter {
-  readonly id="web-audio"; readonly version="1.0.0"; readonly target="web" as const;
+  readonly id="web-audio"; readonly version="1.1.0"; readonly target="web" as const;
   supports(format:string){return /^(audio\/|mp3$|aac$|ogg$|opus$|wav$)/i.test(format);}
   createPlayer(){return new WebRadioPlayer();}
 }
