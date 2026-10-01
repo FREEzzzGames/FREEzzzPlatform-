@@ -120,6 +120,7 @@ function selectedLiveCreator(): LiveCreator { return liveCreators.find(creator =
 function selectedLiveSource(): LiveSource { const creator = selectedLiveCreator(); return creator.sources.find(source => source.id === selectedLiveSourceId) ?? creator.sources[0]; }
 function liveEmbedUrl(source: LiveSource): string | undefined {
   if (source.kind === "twitch" && source.channel) {
+    if (window.innerWidth < 400) return undefined;
     const parent = window.location.hostname || "freezzgames.github.io";
     return `https://player.twitch.tv/?${new URLSearchParams({ channel: source.channel, parent, autoplay: "false", muted: "false" }).toString()}`;
   }
