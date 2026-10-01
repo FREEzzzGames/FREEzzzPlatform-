@@ -141,7 +141,6 @@ interface LivePlaybackStatusFile {
   readonly generatedAt?: string;
   readonly sources?: Readonly<Record<string, LivePlaybackEntry>>;
 }
-const MAX_LIVE_POPUPS = 1;
 const LIVE_CUSTOM_STORAGE_KEY = "freezzz:live:custom-creators";
 let customLiveCreators: LiveCreator[] = loadCustomLiveCreators();
 let selectedLiveCreatorId = liveCreators[0].id;
