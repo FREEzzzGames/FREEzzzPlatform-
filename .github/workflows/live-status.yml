@@ -44,7 +44,8 @@ jobs:
           ];
 
           const existing = JSON.parse(fs.readFileSync("web/live-status.json", "utf8"));
-          const sources = { ...(existing.sources || {}) };
+          const previousSources = { ...(existing.sources || {}) };
+          const sources = {};
           const now = new Date().toISOString();
 
           async function json(url, options = {}) {
@@ -221,7 +222,16 @@ jobs:
           (async () => {
             await refreshYoutube().catch(error => console.error("YouTube refresh", error.message));
             await refreshTwitch().catch(error => console.error("Twitch refresh", error.message));
-            fs.writeFileSync("web/live-status.json", JSON.stringify({ generatedAt: now, sources }, null, 2) + "\n");
+
+            // Never publish a cache with zero sources. If every upstream provider
+            // is temporarily unreachable, keep the last known connected state.
+            const refreshedCount = Object.keys(sources).length;
+            const finalSources = refreshedCount > 0 ? sources : previousSources;
+            if (Object.keys(finalSources).length === 0) {
+              throw new Error("LIVE refresh produced zero sources and no previous cache exists");
+            }
+
+            fs.writeFileSync("web/live-status.json", JSON.stringify({ generatedAt: now, sources: finalSources }, null, 2) + "\n");
             const result = JSON.parse(fs.readFileSync("web/live-status.json", "utf8"));
             const sourceCount = Object.keys(result.sources || {}).length;
             if (result.generatedAt !== now || !result.sources || typeof result.sources !== "object") {
