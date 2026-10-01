@@ -55,6 +55,28 @@ gameCatalog.register({ id: "platform-demo-game", name: "Platform Demo", version:
 const gamePlayer = new WebGamePlayer(gameCatalog, new GameRuntime({ content: new GameContentResolver(contentRegistry, contentSource) }));
 const genesisPlayer = new GenesisWebPlayer();
 const genesisGamepad = new VirtualGamepad("sega-megadrive-6", (key, action) => genesisPlayer.sendInput(key, action));
+function syncGenesisGamepad(): void {
+  const target = document.querySelector<HTMLElement>("#genesis-gamepad");
+  if (!target) return;
+  const state = genesisPlayer.getState();
+  if (state.status === "running") {
+    genesisGamepad.mount(target);
+    target.classList.remove("genesis-gamepad-hidden");
+  } else {
+    genesisGamepad.destroy();
+    target.replaceChildren();
+    target.classList.add("genesis-gamepad-hidden");
+  }
+}
+genesisPlayer.onStateChange(state => {
+  syncGenesisGamepad();
+  const status = document.querySelector<HTMLElement>("#genesis-status");
+  if (status && state.fileName) {
+    status.textContent = state.error
+      ? "Sega emulator error: " + state.error
+      : "Sega emulator: " + state.status + " · " + state.fileName;
+  }
+});
 const gameLibrary = new GameLibraryProjection(gameCatalog, library);
 const platformStorageAdapter = new WebStorageAdapter("freezzz:platform:");
 const platformSession = new PlatformSessionPersistence(platformStorageAdapter);
@@ -137,7 +159,8 @@ function bind(current: PlatformWorkspaceView): void {
       }
     }));
     const gamepadTarget = document.querySelector<HTMLElement>("#genesis-gamepad");
-    if (gamepadTarget) genesisGamepad.mount(gamepadTarget);
+    if (gamepadTarget) gamepadTarget.classList.add("genesis-gamepad-hidden");
+    syncGenesisGamepad();
     const genesisState = genesisPlayer.getState();
     const genesisStatus = document.querySelector<HTMLElement>("#genesis-status");
     if (genesisStatus && genesisState.fileName) genesisStatus.textContent = "Sega emulator: " + genesisState.status + " · " + genesisState.fileName;
