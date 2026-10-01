@@ -426,3 +426,14 @@ img,video,iframe,canvas,svg{max-width:100%}
   .live-detail-profile{gap:11px}
   .live-detail-actions>*{flex:1 1 100%}
 }
+/* LIVE PLAYER — video only, no rectangular info panel */
+.global-live-player{position:relative!important;border:0!important;border-radius:0!important;background:#000!important;box-shadow:none!important;overflow:visible!important}
+.global-live-video{position:relative;width:100%;height:clamp(160px,30dvh,420px);min-height:160px;max-height:420px;background:#000;border:0!important;border-radius:0!important;overflow:hidden}
+.global-live-video iframe{display:block;width:100%;height:100%;border:0!important;border-radius:0!important}
+.global-live-close-text{position:absolute;top:10px;right:12px;z-index:5;border:0!important;background:transparent!important;color:#fff;padding:4px 2px;min-height:0!important;font:500 14px/1.2 system-ui,sans-serif;cursor:pointer;text-decoration:none;box-shadow:none!important;opacity:.9}
+.global-live-close-text:hover,.global-live-close-text:focus-visible{color:#fff;background:transparent!important;text-decoration:underline;outline:none}
+.global-live-player-head{display:none!important}
+@media(max-width:650px){
+  .global-live-video{height:30dvh;min-height:145px;max-height:300px}
+  .global-live-close-text{top:8px;right:10px;font-size:13px}
+}
