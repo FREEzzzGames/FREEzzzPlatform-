@@ -2,9 +2,6 @@ name: LIVE playback status
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - .github/workflows/live-status.yml
   schedule:
     - cron: "17 * * * *"
 
