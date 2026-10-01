@@ -291,6 +291,14 @@ function liveStatusKey(creatorId: string, sourceId: string): string {
 }
 function liveEmbedUrl(creatorId: string, source: LiveSource): string | undefined {
   const status = livePlaybackStatus.sources?.[liveStatusKey(creatorId, source.id)];
+  if (source.kind === "youtube" && source.videoId) {
+    return "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(source.videoId) + "?" +
+      new URLSearchParams({ autoplay: "0", rel: "0", playsinline: "1" }).toString();
+  }
+  if (source.kind === "youtube" && source.youtubeHandle) {
+    return "https://www.youtube-nocookie.com/embed?" +
+      new URLSearchParams({ listType: "user_uploads", list: source.youtubeHandle, autoplay: "0", rel: "0", playsinline: "1" }).toString();
+  }
   if (status && !status.online && status.fallbackVideoId) {
     if (source.kind === "twitch") {
       const parent = window.location.hostname || "freezzgames.github.io";
@@ -443,8 +451,9 @@ function view(current: PlatformWorkspaceView): string {
   if (current === "live") {
     const selected = selectedLiveCreator();
     const source = selectedLiveSource();
+    const liveCatalog = allLiveCreators();
     return `<section class="panel live-portal">
-      <div class="live-title-row"><div><span class="muted">LIVE</span><h2>Стримы</h2><p>Открывай источники во всплывающих окнах. Одновременно до 4 плееров.</p></div><span class="live-count">${livePopups.length}/${MAX_LIVE_POPUPS} players</span></div>
+      <div class="live-title-row"><div><span class="muted">LIVE</span><h2>Стримы</h2><p>Открывай источники во всплывающих окнах. Одновременно до 4 плееров.</p></div><div class="live-title-actions"><span class="live-count">${livePopups.length}/${MAX_LIVE_POPUPS} players</span><button id="live-add-streamer" class="live-add-button" type="button">＋ Добавить стримера</button></div></div>
       <div class="live-feature">
         <div class="live-feature-head">
           <div class="live-creator-title"><div class="live-avatar">${escapeHtml(selected.name.slice(0, 2).toUpperCase())}</div><div><strong>${escapeHtml(selected.name)}</strong><span>${escapeHtml(selected.region)} · ${escapeHtml(selected.categories.join(" · "))}</span></div></div>
@@ -452,11 +461,11 @@ function view(current: PlatformWorkspaceView): string {
         </div>
         <div class="live-source-tabs">${selected.sources.map(item => `<button class="live-source" data-live-open-creator="${escapeHtml(selected.id)}" data-live-open-source="${escapeHtml(item.id)}" type="button">${escapeHtml(item.label)} · ▶</button>`).join("")}</div>
       </div>
-      <div class="live-catalog-head"><strong>Все блогеры</strong><span>Нажми источник, чтобы открыть отдельное окно.</span></div>
-      <div class="live-catalog">${liveCreators.map(creator => `<button class="live-card ${creator.id === selected.id ? "active" : ""}" data-live-creator="${escapeHtml(creator.id)}" type="button"><span class="live-avatar small">${escapeHtml(creator.name.slice(0, 2).toUpperCase())}</span><span class="live-card-main"><strong>${escapeHtml(creator.name)}</strong><span>${escapeHtml(creator.region)}</span><small>${escapeHtml(creator.categories.join(" · "))}</small></span><span class="live-source-count">${creator.sources.length} src</span></button>`).join("")}</div>
+      <div class="live-catalog-head"><div><strong>Все блогеры</strong><span>Системные + добавленные тобой. Нажми источник, чтобы открыть окно.</span></div><span>${liveCatalog.length} всего</span></div>
+      <div class="live-catalog">${liveCatalog.map(creator => `<button class="live-card ${creator.id === selected.id ? "active" : ""}" data-live-creator="${escapeHtml(creator.id)}" type="button"><span class="live-avatar small">${escapeHtml(creator.name.slice(0, 2).toUpperCase())}</span><span class="live-card-main"><strong>${escapeHtml(creator.name)}</strong><span>${escapeHtml(creator.region)}</span><small>${escapeHtml(creator.categories.join(" · "))}</small></span><span class="live-source-count">${creator.custom ? "CUSTOM" : creator.sources.length + " src"}</span>${creator.custom ? '<span class="live-card-remove" data-live-remove="' + escapeHtml(creator.id) + '" role="button" tabindex="0" aria-label="Удалить ' + escapeHtml(creator.name) + '">×</span>' : ""}</button>`).join("")}</div>
       ${livePopups.length ? `<div class="live-popup-layer" aria-label="LIVE players">
         <div class="live-popup-grid">${livePopups.map(popup => {
-          const creator = liveCreators.find(item => item.id === popup.creatorId);
+          const creator = allLiveCreators().find(item => item.id === popup.creatorId);
           const popupSource = liveSource(popup.creatorId, popup.sourceId);
           if (!creator || !popupSource) return "";
           const embedUrl = liveEmbedUrl(popup.creatorId, popupSource);
@@ -576,6 +585,18 @@ function bind(current: PlatformWorkspaceView): void {
     document.querySelectorAll<HTMLButtonElement>("[data-live-popup-close]").forEach(button => button.addEventListener("click", () => {
       closeLivePopup(button.dataset.livePopupClose ?? "");
     }));
+    document.querySelector("#live-add-streamer")?.addEventListener("click", openLiveAddModal);
+    document.querySelectorAll<HTMLElement>("[data-live-remove]").forEach(element => {
+      const remove = (event: Event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        removeCustomLiveCreator(element.dataset.liveRemove ?? "");
+      };
+      element.addEventListener("click", remove);
+      element.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") remove(event);
+      });
+    });
   }
   if (current === "radio") {
     document.querySelector<HTMLFormElement>("#radio-search-form")?.addEventListener("submit", event => {
