@@ -386,3 +386,88 @@ body:not([data-platform-view="radio"]) footer .muted{
 .midi-asset.active{border-color:#7d91aa;background:#202b39}
 .midi-asset.active small{color:#cbd5e2}
 @media(max-width:760px){.midi-assets{grid-template-columns:1fr}}
+
+
+/* RADIO — fixed station-card standard + logo-first presentation */
+.radio-carousel-track{
+  min-height:156px;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:10px 0;
+}
+.radio-carousel-card,
+.radio-carousel-card.active{
+  box-sizing:border-box;
+  flex:0 0 128px;
+  width:128px;
+  min-width:128px;
+  height:128px;
+  min-height:128px;
+  padding:10px;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  transform:none;
+  overflow:hidden;
+}
+.radio-carousel-card.active{
+  border-color:#7d91aa;
+  box-shadow:0 10px 24px rgba(0,0,0,.22);
+}
+.radio-carousel-card .radio-card-logo{
+  display:block;
+  width:86px;
+  height:86px;
+  object-fit:contain;
+  border-radius:12px;
+  background:#f1f3f5;
+  padding:6px;
+  box-sizing:border-box;
+}
+.radio-carousel-card .radio-card-logo-fallback{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:86px;
+  height:86px;
+  border-radius:12px;
+  background:#202a36;
+  color:#dce3ed;
+  font-size:38px;
+  line-height:1;
+}
+.radio-carousel-card strong,
+.radio-carousel-card span:not(.radio-card-logo-fallback){
+  display:none;
+}
+.radio-now-playing h3{
+  margin:5px 0 6px;
+}
+.radio-now-playing p{
+  max-width:720px;
+  line-height:1.5;
+}
+@media(max-width:760px){
+  .radio-carousel-track{
+    min-height:122px;
+    gap:7px;
+  }
+  .radio-carousel-card,
+  .radio-carousel-card.active{
+    flex:0 0 96px;
+    width:96px;
+    min-width:96px;
+    height:96px;
+    min-height:96px;
+    padding:7px;
+  }
+  .radio-carousel-card .radio-card-logo,
+  .radio-carousel-card .radio-card-logo-fallback{
+    width:68px;
+    height:68px;
+  }
+  .radio-carousel-card .radio-card-logo-fallback{
+    font-size:30px;
+  }
+}
