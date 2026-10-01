@@ -192,7 +192,7 @@ function removeCustomLiveCreator(creatorId: string): void {
     selectedLiveSourceId = fallback?.sources[0]?.id ?? liveCreators[0]?.sources[0]?.id ?? "";
   }
   if (livePopup?.creatorId === creatorId) {
-    livePopup = null;
+    livePopup = undefined;
   }
   saveCustomLiveCreators();
   render();
