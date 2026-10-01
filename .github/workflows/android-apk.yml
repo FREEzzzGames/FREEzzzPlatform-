@@ -54,6 +54,13 @@ jobs:
           grep -q 'Always boot the local portal' android/app/src/main/java/com/freezzz/platform/MainActivity.java
           grep -q 'onRenderProcessGone' android/app/src/main/java/com/freezzz/platform/MainActivity.java
           grep -q 'WebView renderer exited' android/app/src/main/java/com/freezzz/platform/MainActivity.java
+      - name: Verify public radio and release catalog
+        run: |
+          grep -q 'RadioBrowserClient' web/main.ts
+          grep -q 'RADIO_GENRES' web/main.ts
+          grep -q 'is_https' web/radio-browser.ts
+          grep -q 'Local Mega Drive ROM' web/main.ts
+          if grep -Eqi 'Mortal Kombat|WWF WrestleMania|Bart vs. the Space Mutants' web/main.ts; then exit 1; fi
       - name: Verify APK output
         run: |
           test -s android/app/build/outputs/apk/debug/app-debug.apk
