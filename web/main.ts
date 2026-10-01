@@ -192,13 +192,13 @@ function view(current: PlatformWorkspaceView): string {
     </div>
     <div class="radio-feature">
       <div class="radio-carousel" id="radio-carousel" aria-label="Radio station carousel">
-        <div class="radio-carousel-track" id="radio-carousel-track">
-          ${carouselCards.map(station => {
+        <div class="radio-carousel-track" id="radio-carousel-track">          ${carouselCards.map(station => {
             const active = station.stationuuid === selectedStation?.stationuuid;
-            return `<button class="radio-carousel-card ${active ? "active" : ""}" data-radio-carousel-id="${escapeHtml(station.stationuuid)}" type="button">
-              <span class="radio-card-country">${escapeHtml(station.country || "International")}</span>
-              <strong>${escapeHtml(station.name)}</strong>
-              <span>${escapeHtml(station.codec || "stream")} · ${station.bitrate || 0} kbps</span>
+            const logo = station.favicon?.trim() || "";
+            return `<button class="radio-carousel-card ${active ? "active" : ""}" data-radio-carousel-id="${escapeHtml(station.stationuuid)}" type="button" title="${escapeHtml(station.name)}" aria-label="${escapeHtml(station.name)}">
+              ${logo
+                ? `<img class="radio-card-logo" src="${escapeHtml(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+                : `<span class="radio-card-logo-fallback" aria-hidden="true">◉</span>`}
             </button>`;
           }).join("")}
         </div>
@@ -207,7 +207,14 @@ function view(current: PlatformWorkspaceView): string {
         <div>
           <span class="muted">NOW PLAYING</span>
           <h3>${selectedStation ? escapeHtml(selectedStation.name) : "Choose a station"}</h3>
-          <p>${selectedStation ? escapeHtml(selectedStation.country || "International") + " · " + escapeHtml(selectedStation.tags || "radio") : "Load a genre or search above."}</p>
+          <p>${selectedStation
+            ? [
+                selectedStation.country || "International",
+                selectedStation.tags || "radio",
+                selectedStation.language || "",
+                selectedStation.codec ? `${selectedStation.codec} · ${selectedStation.bitrate || 0} kbps` : ""
+              ].filter(Boolean).map(escapeHtml).join(" · ")
+            : "Load a genre or search above."}</p>
         </div>
         <div class="radio-player-controls">
           <button id="radio-play" type="button" ${selectedStation ? "" : "disabled"}>${radioPlaybackStatus === "playing" ? "Playing" : "Play"}</button>
