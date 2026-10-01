@@ -4,6 +4,8 @@ import android.app.Activity
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -27,9 +29,25 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.setStatusBarColor(Color.rgb(8, 10, 15))
-        window.setNavigationBarColor(Color.rgb(8, 10, 15))
-        window.decorView.systemUiVisibility = 0
+        window.setStatusBarColor(Color.TRANSPARENT)
+        window.setNavigationBarColor(Color.TRANSPARENT)
+        if (android.os.Build.VERSION.SDK_INT >= 30) {
+            window.setDecorFitsSystemWindows(false)
+            window.insetsController?.let { controller ->
+                controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                controller.systemBarsBehavior =
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility =
+                View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        }
         container = FrameLayout(this).apply { setBackgroundColor(Color.rgb(8, 10, 15)) }
         setContentView(container)
         createWebView()
@@ -108,6 +126,9 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        if (android.os.Build.VERSION.SDK_INT >= 30) {
+            window.insetsController?.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+        }
         webView?.onResume()
         if (webView != null && !pageLoaded) webView?.post { webView?.loadUrl(START_URL) }
     }
