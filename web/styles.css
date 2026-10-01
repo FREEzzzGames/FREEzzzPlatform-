@@ -366,3 +366,11 @@ img,video,iframe,canvas,svg{max-width:100%}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;transition-duration:0.01ms!important;animation-duration:0.01ms!important}
 }
+/* DEV TOGGLE — keep developer control inside the header when visible */
+.topbar-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
+.developer-ui-toggle-inline{position:static;z-index:auto;box-shadow:none;backdrop-filter:none;flex:0 0 auto}
+@media(max-width:650px){
+  .topbar-actions{gap:6px}
+  .developer-ui-toggle-inline{padding:7px 8px;font-size:8px}
+  .topbar .state{flex:0 0 auto}
+}
