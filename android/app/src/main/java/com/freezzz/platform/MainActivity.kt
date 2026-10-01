@@ -1,125 +1,137 @@
 package com.freezzz.platform
 
 import android.app.Activity
+import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import java.io.ByteArrayInputStream
-import java.io.IOException
-import java.util.Locale
+import android.widget.FrameLayout
+import androidx.webkit.WebViewAssetLoader
+import androidx.webkit.WebViewClientCompat
 
 class MainActivity : Activity() {
-    private lateinit var webView: WebView
+    private lateinit var container: FrameLayout
+    private var webView: WebView? = null
+    private var pageLoaded = false
+
+    companion object {
+        private const val START_URL = "https://appassets.androidplatform.net/assets/web/index.html"
+        private const val LOG_TAG = "FREEzzzWeb"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.setStatusBarColor(Color.rgb(8, 10, 15))
+        window.setNavigationBarColor(Color.rgb(8, 10, 15))
+        window.decorView.systemUiVisibility = 0
+        container = FrameLayout(this).apply { setBackgroundColor(Color.rgb(8, 10, 15)) }
+        setContentView(container)
+        createWebView()
+    }
 
-        webView = WebView(this).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.mediaPlaybackRequiresUserGesture = false
-            settings.cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
-            settings.allowFileAccess = false
-            settings.allowContentAccess = false
-            settings.safeBrowsingEnabled = true
-            webViewClient = LocalAssetWebViewClient()
+    private fun createWebView() {
+        webView?.let {
+            container.removeView(it)
+            it.stopLoading()
+            it.destroy()
+        }
+        pageLoaded = false
+        val assetLoader = WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .build()
+        val view = WebView(this)
+        webView = view
+        with(view) {
+            setBackgroundColor(Color.rgb(8, 10, 15))
+            setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                databaseEnabled = true
+                mediaPlaybackRequiresUserGesture = false
+                cacheMode = WebSettings.LOAD_DEFAULT
+                allowFileAccess = false
+                allowContentAccess = false
+                javaScriptCanOpenWindowsAutomatically = false
+                setSupportMultipleWindows(false)
+                if (android.os.Build.VERSION.SDK_INT >= 26) safeBrowsingEnabled = true
+            }
+            webViewClient = object : WebViewClientCompat() {
+                override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
+                    assetLoader.shouldInterceptRequest(request.url)
+
+                override fun onPageFinished(view: WebView, url: String) {
+                    pageLoaded = true
+                    view.setBackgroundColor(Color.TRANSPARENT)
+                    super.onPageFinished(view, url)
+                }
+
+                override fun onReceivedError(view: WebView, request: WebResourceRequest, error: android.webkit.WebResourceError) {
+                    if (request.isForMainFrame) {
+                        pageLoaded = false
+                        android.util.Log.e(LOG_TAG, "Main frame load failed: " + error.errorCode + " " + error.description)
+                    }
+                    super.onReceivedError(view, request, error)
+                }
+
+                override fun onRenderProcessGone(view: WebView, detail: android.webkit.RenderProcessGoneDetail): Boolean {
+                    android.util.Log.e(LOG_TAG, "WebView renderer exited; recreating WebView")
+                    recreateWebView()
+                    return true
+                }
+            }
             webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(message: ConsoleMessage): Boolean {
-                    android.util.Log.d(
-                        "FREEzzzWeb",
-                        "${message.message()} @ ${message.sourceId()}:${message.lineNumber()}"
-                    )
+                    android.util.Log.d(LOG_TAG, message.message() + " @ " + message.sourceId() + ":" + message.lineNumber())
                     return true
                 }
             }
         }
+        container.addView(view, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+        view.post { view.loadUrl(START_URL) }
+    }
 
-        setContentView(webView)
-
-        if (savedInstanceState == null) {
-            webView.loadUrl("https://freezzz.local/index.html")
-        } else {
-            webView.restoreState(savedInstanceState)
+    private fun recreateWebView() {
+        runOnUiThread {
+            if (!isFinishing && !isDestroyed) createWebView()
         }
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        webView.saveState(outState)
-        super.onSaveInstanceState(outState)
+    override fun onResume() {
+        super.onResume()
+        webView?.onResume()
+        if (webView != null && !pageLoaded) webView?.post { webView?.loadUrl(START_URL) }
     }
 
-    override fun onStart() {
-        super.onStart()
-        webView.onResume()
+    override fun onPause() {
+        webView?.onPause()
+        super.onPause()
     }
 
-    override fun onStop() {
-        webView.onPause()
-        super.onStop()
+    override fun onDestroy() {
+        webView?.let {
+            it.stopLoading()
+            it.clearHistory()
+            it.removeAllViews()
+            container.removeView(it)
+            it.destroy()
+        }
+        webView = null
+        super.onDestroy()
     }
 
     @Deprecated("Deprecated in Android API 33; retained for minSdk compatibility.")
     override fun onBackPressed() {
-        if (webView.canGoBack()) webView.goBack() else super.onBackPressed()
-    }
-
-    override fun onDestroy() {
-        webView.stopLoading()
-        webView.destroy()
-        super.onDestroy()
-    }
-
-    private class LocalAssetWebViewClient : WebViewClient() {
-        override fun shouldInterceptRequest(
-            view: WebView,
-            request: WebResourceRequest
-        ): WebResourceResponse? {
-            val url = request.url
-            if (url.scheme != "https" || url.host != "freezzz.local") {
-                return super.shouldInterceptRequest(view, request)
-            }
-
-            val path = url.path ?: "/index.html"
-            val assetPath = path.removePrefix("/").ifBlank { "index.html" }
-
-            return try {
-                val bytes = view.context.assets.open("web/$assetPath").use { it.readBytes() }
-                WebResourceResponse(
-                    mimeType(assetPath),
-                    "UTF-8",
-                    200,
-                    "OK",
-                    mapOf("Cache-Control" to "no-cache"),
-                    ByteArrayInputStream(bytes)
-                )
-            } catch (_: IOException) {
-                WebResourceResponse(
-                    "text/plain",
-                    "UTF-8",
-                    404,
-                    "Not Found",
-                    emptyMap(),
-                    ByteArrayInputStream("Not Found".toByteArray())
-                )
-            }
-        }
-
-        private fun mimeType(path: String): String = when {
-            path.endsWith(".html", true) -> "text/html"
-            path.endsWith(".js", true) -> "text/javascript"
-            path.endsWith(".css", true) -> "text/css"
-            path.endsWith(".json", true) -> "application/json"
-            path.endsWith(".svg", true) -> "image/svg+xml"
-            path.endsWith(".png", true) -> "image/png"
-            path.endsWith(".jpg", true) || path.endsWith(".jpeg", true) -> "image/jpeg"
-            path.endsWith(".webp", true) -> "image/webp"
-            path.endsWith(".woff2", true) -> "font/woff2"
-            path.endsWith(".woff", true) -> "font/woff"
-            else -> "application/octet-stream"
-        }
+        val view = webView
+        if (view != null && view.canGoBack()) view.goBack() else super.onBackPressed()
     }
 }
