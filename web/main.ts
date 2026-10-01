@@ -277,7 +277,7 @@ function liveEmbedUrl(creatorId: string, source: LiveSource): string | undefined
   }
   if (source.kind === "youtube" && source.channel) {
     if (status?.online && status.liveVideoId) {
-      return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(status.liveVideoId)}?${new URLSearchParams({ autoplay: "0", rel: "0", playsinline: "1" }).toString()}`;
+      return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(status.liveVideoId)}?${new URLSearchParams({ autoplay: "1", mute: "1", rel: "0", playsinline: "1" }).toString()}`;
     }
     return `https://www.youtube-nocookie.com/embed/live_stream?${new URLSearchParams({ channel: source.channel, autoplay: "0", rel: "0", playsinline: "1" }).toString()}`;
   }
