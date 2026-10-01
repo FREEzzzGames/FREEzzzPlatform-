@@ -11,6 +11,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -109,7 +110,7 @@ public class MainActivity extends Activity {
 
         private WebResourceResponse serveLocalAsset(WebView view, String scheme, String host, String path) {
             if (!LOCAL_SCHEME.equalsIgnoreCase(scheme) || !LOCAL_HOST.equalsIgnoreCase(host)) {
-                return super.shouldInterceptRequest(view, android.net.Uri.parse("about:blank").toString());
+                return null;
             }
 
             String assetPath = path == null ? "index.html" : path.replaceFirst("^/+", "");
@@ -117,8 +118,14 @@ public class MainActivity extends Activity {
 
             try {
                 byte[] bytes;
-                try (java.io.InputStream input = view.getContext().getAssets().open(assetPath)) {
-                    bytes = input.readAllBytes();
+                try (java.io.InputStream input = view.getContext().getAssets().open(assetPath);
+                     ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[8192];
+                    int read;
+                    while ((read = input.read(buffer)) != -1) {
+                        output.write(buffer, 0, read);
+                    }
+                    bytes = output.toByteArray();
                 }
 
                 Map<String, String> headers = new HashMap<>();
