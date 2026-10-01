@@ -274,7 +274,13 @@ function bind(current: PlatformWorkspaceView): void {
         render();
       }
     }));
-    document.querySelector("#radio-play")?.addEventListener("click", () => { void playRadioStation(radioSelectedId); });
+    document.querySelector("#radio-play")?.addEventListener("click", () => {
+      void playRadioStation(radioSelectedId).catch(error => {
+        radioPlaybackStatus = "failed";
+        radioError = error instanceof Error ? error.message : String(error);
+        render();
+      });
+    });
     document.querySelector("#radio-pause")?.addEventListener("click", () => {
       try { radio.pause(); radioPlaybackStatus = "paused"; render(); } catch (error) { workspace.reportError(error); render(); }
     });
