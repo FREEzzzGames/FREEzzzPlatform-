@@ -84,12 +84,25 @@ jobs:
                   key: process.env.YOUTUBE_API_KEY
                 });
                 const activity = await json(activityUrl);
-                const latestUpload = (activity.items || []).find(item => item?.snippet?.type === "upload" && item?.contentDetails?.upload?.videoId);
+                const uploadIds = (activity.items || [])
+                  .filter(item => item?.snippet?.type === "upload" && item?.contentDetails?.upload?.videoId)
+                  .map(item => item.contentDetails.upload.videoId);
+                let latestLiveVideoId;
+                if (uploadIds.length) {
+                  const videosUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
+                  videosUrl.search = new URLSearchParams({
+                    part: "id,liveStreamingDetails",
+                    id: uploadIds.join(","),
+                    key: process.env.YOUTUBE_API_KEY
+                  });
+                  const videos = await json(videosUrl);
+                  latestLiveVideoId = videos.items?.find(video => video?.liveStreamingDetails?.actualStartTime)?.id;
+                }
                 const liveItem = live.items?.[0];
                 sources[key] = {
                   online: Boolean(liveItem?.id?.videoId),
                   ...(liveItem?.id?.videoId ? { liveVideoId: liveItem.id.videoId } : {}),
-                  ...(latestUpload?.contentDetails?.upload?.videoId ? { fallbackVideoId: latestUpload.contentDetails.upload.videoId } : {}),
+                  ...(latestLiveVideoId ? { fallbackVideoId: latestLiveVideoId } : {}),
                   checkedAt: now
                 };
               } catch (error) {
