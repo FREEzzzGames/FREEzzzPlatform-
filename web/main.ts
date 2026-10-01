@@ -348,7 +348,7 @@ function bind(current: PlatformWorkspaceView): void {
     });
     const log = document.querySelector<HTMLElement>("#chat-log");
     if (log) log.scrollTop = log.scrollHeight;
-  } persistSession(); render(); });
+  }
   if (current === "live") {
     document.querySelectorAll<HTMLButtonElement>("[data-live-creator]").forEach(button => button.addEventListener("click", () => {
       selectedLiveCreatorId = button.dataset.liveCreator ?? liveCreators[0].id;
