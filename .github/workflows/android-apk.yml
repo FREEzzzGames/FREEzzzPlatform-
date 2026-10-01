@@ -61,6 +61,12 @@ jobs:
           grep -q 'is_https' web/radio-browser.ts
           grep -q 'Local Mega Drive ROM' web/main.ts
           if grep -Eqi 'Mortal Kombat|WWF WrestleMania|Bart vs. the Space Mutants' web/main.ts; then exit 1; fi
+          grep -q 'woodskiy-ded' web/main.ts
+          grep -q 'noobfromua' web/main.ts
+          grep -q 'smetana' web/main.ts
+          grep -q 'https://www.youtube.com/channel/UCKgQPQj9J3BUgTVci1up75A' web/main.ts
+          grep -q 'https://www.youtube.com/channel/UCfsOfLvadg89Bx8Sv_6WERg' web/main.ts
+          grep -q 'https://www.youtube.com/@smetanaml' web/main.ts
       - name: Verify APK output
         run: |
           test -s android/app/build/outputs/apk/debug/app-debug.apk
