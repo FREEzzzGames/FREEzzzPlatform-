@@ -48,6 +48,16 @@ jobs:
           const sources = {};
           const now = new Date().toISOString();
 
+          // Keep every configured channel represented even if a provider is
+          // temporarily unavailable. Provider refreshes overwrite these entries
+          // with real online/offline and recording data.
+          for (const key of Object.keys(youtubeChannels)) {
+            sources[key] = { online: false, checkedAt: now, mode: "provider-unavailable" };
+          }
+          for (const [key] of twitchChannels) {
+            sources[`${key}:twitch`] = { online: false, checkedAt: now, mode: "provider-unavailable" };
+          }
+
           async function json(url, options = {}) {
             const response = await fetch(url, options);
             if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${url}`);
