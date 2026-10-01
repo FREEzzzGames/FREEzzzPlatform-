@@ -74,7 +74,7 @@ export const MIDI_ASSET_CATALOG: readonly MidiAssetItem[] = [
   }
 ];
 
-const STORAGE_KEY = "freezzz:radio:midi-assets";
+const STORAGE_KEY = "freezzz:midi:assets";
 
 export function loadMidiAssetCollection(): string[] {
   try {
