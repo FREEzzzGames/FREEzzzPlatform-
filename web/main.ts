@@ -430,13 +430,11 @@ function renderGlobalLivePlayer(): void {
   }
 
   globalLiveHost.innerHTML = `
-    <div class="global-live-player-head">
-      <div><strong>LIVE · ${escapeHtml(creator.name)}</strong><span>${escapeHtml(source.label)} · ${playbackText}</span></div>
-      <button id="global-live-close" type="button" aria-label="Закрыть LIVE player">×</button>
-    </div>
-    <div class="global-live-video">${embedUrl
-      ? `<iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(creator.name)} — ${escapeHtml(source.label)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`
-      : `<div class="global-live-fallback">Плеер временно недоступен.</div>`}
+    <div class="global-live-video">
+      ${embedUrl
+        ? `<iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(creator.name)} — ${escapeHtml(source.label)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`
+        : `<div class="global-live-fallback">Плеер временно недоступен.</div>`}
+      <button id="global-live-close" class="global-live-close-text" type="button" aria-label="Закрыть LIVE player">Закрыть</button>
     </div>`;
 
   globalLivePlayerKey = key;
