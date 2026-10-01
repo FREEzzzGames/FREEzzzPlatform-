@@ -178,8 +178,8 @@ function view(current: PlatformWorkspaceView): string {
   const selectedStation = radioStations.find(station => station.stationuuid === radioSelectedId) ?? radioStations[0];
   const selectedIndex = selectedStation ? radioStations.findIndex(station => station.stationuuid === selectedStation.stationuuid) : -1;
   const carouselCards = selectedStation && selectedIndex >= 0 && radioStations.length
-    ? Array.from({ length: Math.min(5, radioStations.length) }, (_, offset) => {
-        const half = Math.floor(Math.min(5, radioStations.length) / 2);
+    ? Array.from({ length: Math.min(3, radioStations.length) }, (_, offset) => {
+        const half = Math.floor(Math.min(3, radioStations.length) / 2);
         const index = (selectedIndex + offset - half + radioStations.length) % radioStations.length;
         return radioStations[index];
       })
@@ -219,8 +219,7 @@ function view(current: PlatformWorkspaceView): string {
     <div class="radio-toolbar"><form id="radio-search-form" class="inline-form"><input id="radio-search-input" value="${escapeHtml(radioQuery)}" maxlength="80" autocomplete="off" placeholder="Search station"><button type="submit">Search</button></form></div>
     <div class="radio-genres">${RADIO_GENRES.map(genre=>`<button class="${radioGenre===genre?"active":""}" data-radio-genre="${genre}" type="button">${escapeHtml(genre)}</button>`).join("")}</div>
     <div class="radio-status">${radioLoading?"Loading stations…":radioError?escapeHtml(radioError):radioStations.length+" stations"}</div>
-    <div class="list radio-stations">${radioStations.map(station=>`<div class="row radio-station ${radioSelectedId===station.stationuuid?"selected":""}"><div><strong>${escapeHtml(station.name)}</strong><span>${escapeHtml(station.country||"International")} · ${escapeHtml(station.codec||"stream")} · ${station.bitrate||0} kbps</span></div><button data-radio-station="${escapeHtml(station.stationuuid)}" type="button">${radioSelectedId===station.stationuuid && radioPlaybackStatus==="playing"?"Playing":"Play"}</button></div>`).join("")}</div>
-    <div class="muted">Catalog: Radio Browser · HTTPS streams only · selected station is saved locally</div>
+    <div class="muted">Swipe the carousel or tap a station card to change selection.</div>
   </section>`;
 }
 
