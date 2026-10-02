@@ -16,11 +16,24 @@ const requiredFiles = [
 ];
 
 const failures = [];
+const obsoleteFiles = [
+  "web/midi-controller.ts",
+  "web/midi-asset-database.ts",
+  "web/midi-presets.ts",
+  "ascii-generator/ascii-generator.ts",
+  "game-bootstrap/game-bootstrap.ts"
+];
+
+
 const read = file => fs.readFileSync(path.join(root, file), "utf8");
 const requireMatch = (file, pattern, description) => {
   const content = read(file);
   if (!pattern.test(content)) failures.push(`${file}: missing ${description}`);
 };
+
+for (const file of obsoleteFiles) {
+  if (fs.existsSync(path.join(root, file))) failures.push(`obsolete file must be absent: ${file}`);
+}
 
 for (const file of requiredFiles) {
   if (!fs.existsSync(path.join(root, file))) failures.push(`missing required file: ${file}`);
@@ -38,6 +51,12 @@ if (failures.length === 0) {
   requireMatch("web/main.ts", /CHAT_BRIDGE_URL = "https:\/\/freezzzplatform-chat\.onrender\.com"/, "canonical CHAT bridge");
   requireMatch("web/main.ts", /loadLivePlaybackStatus\(\)/, "LIVE cache loader");
   requireMatch("web/main.ts", /GameRuntime/, "GAME runtime");
+  requireMatch("web/main.ts", /TelegramIntegration/, "Telegram identity integration");
+  requireMatch("web/main.ts", /TelegramChatSync/, "Telegram CHAT mirror");
+  if (/midi-controller|midi-asset-database|midi-presets|ascii-generator|registerWebDemoGame/.test(read("web/main.ts"))) {
+    failures.push("web/main.ts: obsolete experimental module reference remains");
+  }
+
   requireMatch("telegram-integration/webapp-adapter.ts", /ready\(\);/, "Telegram ready handshake");
   requireMatch("telegram-integration/webapp-adapter.ts", /expand\(\);/, "Telegram expand handshake");
   requireMatch("web/chat-sync.ts", /\/api\/chat\/messages\?limit=/, "CHAT history endpoint");
