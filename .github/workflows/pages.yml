@@ -4,8 +4,6 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
-  schedule:
-    - cron: "17 * * * *"
 
 permissions:
   contents: read
@@ -14,7 +12,7 @@ permissions:
 
 concurrency:
   group: freezzz-pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -29,7 +27,7 @@ jobs:
           node-version: "22"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Refresh LIVE cache
         env:
@@ -49,6 +47,12 @@ jobs:
 
       - name: Build web portal
         run: npm run build
+
+      - name: Stamp artifact with exact commit
+        run: |
+          set -euo pipefail
+          sed -i "s/__FREEZZ_BUILD_SHA__/${GITHUB_SHA}/g" dist/index.html
+          grep -q "${GITHUB_SHA}" dist/index.html
 
       - name: Validate Pages artifact
         run: |
