@@ -17,17 +17,19 @@ jobs:
       - name: Check deployed Web
         run: |
           set -euo pipefail
+          expected_sha="${{ github.event.workflow_run.head_sha || github.sha }}"
           url="https://freezzgames.github.io/FREEzzzPlatform-/"
           for attempt in $(seq 1 18); do
             code="$(curl -L --max-time 15 -s -o /tmp/pages.html -w '%{http_code}' "$url" || true)"
             echo "Web attempt $attempt: HTTP $code"
-            if [ "$code" = "200" ] && grep -q 'FREEzzzzyPortal' /tmp/pages.html && grep -q 'freezzz-build' /tmp/pages.html && grep -q '2026-10-02-main-sync' /tmp/pages.html && grep -q 'telegram.org/js/telegram-web-app.js' /tmp/pages.html; then
+            if [ "$code" = "200" ] && grep -q 'FREEzzzzyPortal' /tmp/pages.html && grep -q 'freezzz-build' /tmp/pages.html && grep -q "$expected_sha" /tmp/pages.html && grep -q 'telegram.org/js/telegram-web-app.js' /tmp/pages.html; then
               break
             fi
             sleep 10
           done
           test -s /tmp/pages.html
-          grep -q 'FREEzzz Platform' /tmp/pages.html
+          grep -q 'FREEzzzzyPortal' /tmp/pages.html
+          grep -q "$expected_sha" /tmp/pages.html
           grep -q 'telegram.org/js/telegram-web-app.js' /tmp/pages.html
 
       - name: Check LIVE cache chain
