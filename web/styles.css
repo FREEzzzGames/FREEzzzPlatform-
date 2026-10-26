@@ -396,3 +396,22 @@ img,video,iframe,canvas,svg{max-width:100%}
   .global-live-video{height:30dvh;min-height:145px;max-height:300px}
   .global-live-close-text{top:8px;right:10px;font-size:13px}
 }
+
+
+/* ZAYCEV.NET MUSIC BLOCK */
+.zaycev-panel{display:flex;flex-direction:column;gap:16px;background:linear-gradient(145deg,#111821,#0b0f15);border:1px solid #263341}
+.zaycev-heading{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.zaycev-heading h2{margin:5px 0;font-size:clamp(25px,5vw,34px)}
+.zaycev-heading p{max-width:640px;margin:0;color:#929eae;font-size:13px;line-height:1.55}
+.zaycev-mark{display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;border:1px solid #40505f;border-radius:14px;background:#17232c;color:#9de9dc;font-size:30px}
+.zaycev-search{display:flex;gap:8px;width:100%}
+.zaycev-search input{flex:1;min-width:0;width:100%;border:1px solid #344252;border-radius:9px;background:#080d13;color:#edf3f8;padding:11px 13px;font:inherit}
+.zaycev-search input::placeholder{color:#69788a}
+.zaycev-search button{flex:0 0 auto;border:1px solid #47756f;border-radius:9px;background:#193b38;color:#dffbf5;padding:10px 14px;font:600 13px system-ui,sans-serif;cursor:pointer}
+.zaycev-search button:hover{background:#24514b}
+.zaycev-actions{display:flex;flex-wrap:wrap;gap:8px}
+.zaycev-actions a{border:1px solid #344252;border-radius:8px;background:#121a24;color:#dce6ef;padding:8px 12px;text-decoration:none;font-size:12px}
+.zaycev-actions a:hover{border-color:#5a7285;background:#1a2632}
+.zaycev-note{margin:0;color:#647285;font-size:11px;line-height:1.5}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:520px){.zaycev-panel{padding:14px}.zaycev-search{flex-direction:column}.zaycev-search button{width:100%}.zaycev-mark{width:44px;height:44px;flex-basis:44px;font-size:25px}.zaycev-heading{align-items:flex-start}}
