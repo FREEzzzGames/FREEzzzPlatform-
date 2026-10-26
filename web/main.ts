@@ -455,7 +455,7 @@ function render(): void {
 function view(current: PlatformWorkspaceView): string {
   if (current === "home") {
     const gameState = gamePlayer.getState();
-    return `<section class="hero panel"><span class="muted">Production workspace</span><h2>Everything in one runtime.</h2><p>Games, library, CHAT, LIVE and RADIO use independent adapters while the workspace preserves the active session.</p><div class="metrics"><span>Runtime<strong>${dStatus()}</strong></span><span>Modules<strong>4</strong></span><span>Game<strong>${gameState.gameId ? escapeHtml(gameState.gameId) : "None"}</strong></span></div><div class="quick-actions"><button data-quick="library" type="button">Open Game Test</button><button data-quick="chat" type="button">Open Chat</button><button data-quick="live" type="button">Open Live</button><button data-quick="radio" type="button">Open Radio</button></div></section>`;
+    return `<section class="hero panel"><span class="muted">Production workspace</span><h2>Everything in one runtime.</h2><p>Games, library, CHAT, LIVE and RADIO use independent adapters while the workspace preserves the active session.</p><div class="metrics"><span>Runtime<strong>${dStatus()}</strong></span><span>Modules<strong>4</strong></span><span>Game<strong>${gameState.gameId ? escapeHtml(gameState.gameId) : "None"}</strong></span></div><div class="quick-actions"><button data-quick="library" type="button">Open Game Test</button><button data-quick="chat" type="button">Open Chat</button><button data-quick="live" type="button">Open Live</button><button data-quick="radio" type="button">Open Radio</button></div></section><section class="panel zaycev-panel" aria-labelledby="zaycev-title"><div class="zaycev-heading"><div><span class="muted">MUSIC SERVICE</span><h2 id="zaycev-title">Зайцев.нет</h2><p>Поиск музыки, прослушивание и загрузка доступны на официальной площадке. Доступность скачивания зависит от конкретного трека и правил сервиса.</p></div><span class="zaycev-mark" aria-hidden="true">♫</span></div><form id="zaycev-search-form" class="zaycev-search"><label class="sr-only" for="zaycev-search-input">Исполнитель или название песни</label><input id="zaycev-search-input" name="q" type="search" maxlength="180" placeholder="Исполнитель или название песни" autocomplete="off"><button type="submit">Найти музыку ↗</button></form><div class="zaycev-actions"><a href="https://zaycev.net/" target="_blank" rel="noopener noreferrer">Открыть сайт</a><a href="https://app.zaycev.net/" target="_blank" rel="noopener noreferrer">Официальное приложение</a></div><p class="zaycev-note">Портал не извлекает аудиофайлы и не обходит ограничения правообладателей; воспроизведение и скачивание выполняются средствами Zaycev.net.</p></section>`;
   }
   if (current === "system") return `<section class="panel"><span class="muted">System</span><h2>Runtime health</h2><div class="status-list"><div>HOST <strong>${host.getStatus()}</strong></div><div>CHAT <strong>${chat.status}</strong></div><div>LIVE <strong>${live.status}</strong></div><div>RADIO <strong>${radio.status}</strong></div><div>LIBRARY <strong>${library.status}</strong></div><div>SESSION <strong>${platformSession.load() ? "RESTORED" : "NEW"}</strong></div></div></section>`;
   if (current === "library") {
@@ -611,6 +611,15 @@ function view(current: PlatformWorkspaceView): string {
 }
 
 function bind(current: PlatformWorkspaceView): void {
+  document.querySelector<HTMLFormElement>("#zaycev-search-form")?.addEventListener("submit", event => {
+    event.preventDefault();
+    const input = document.querySelector<HTMLInputElement>("#zaycev-search-input");
+    const query = input?.value.trim() ?? "";
+    if (!query) { input?.focus(); return; }
+    const url = new URL("https://zaycev.net/search.html");
+    url.searchParams.set("query", query);
+    window.open(url.toString(), "_blank", "noopener,noreferrer");
+  });
   document.querySelectorAll<HTMLButtonElement>("[data-quick]").forEach(button => button.addEventListener("click", () => { workspace.navigate(button.dataset.quick as PlatformWorkspaceView); persistSession(); render(); }));
   if (current === "library") {
     document.querySelectorAll<HTMLButtonElement>("[data-game-launch]").forEach(button => button.addEventListener("click", () => { try { gamePlayer.select(button.dataset.gameLaunch!); gamePlayer.launch(); persistSession(); startGameLoop(); render(); } catch (error) { workspace.reportError(error); render(); } }));
