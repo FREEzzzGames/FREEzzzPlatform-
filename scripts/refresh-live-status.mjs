@@ -50,7 +50,7 @@ async function text(url, options = {}) {
 }
 
 function firstYoutubeVideoId(xml) {
-  return xml.match(/<yt:videoId[^>]*>([^<]+)<\\/yt:videoId>/)?.[1]?.trim();
+  return xml.match(/<yt:videoId[^>]*>([^<]+)<\/yt:videoId>/)?.[1]?.trim();
 }
 
 async function resolveYoutubeHandle(handle) {
